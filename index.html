@@ -162,8 +162,8 @@
 
   <!-- RECENT DATED ACTIVITY -->
   <div class="card">
-    <h2>Recent activity by date <span class="badge">Analytics only · partial</span></h2>
-    <div class="cap">Analytics recently added "Date Called" / "Date Followed Up" columns — only the most recent leads have a date logged yet. This is not a full historical record.</div>
+    <h2>Recent activity by date <span class="badge" id="dateBadge"></span></h2>
+    <div class="cap" id="dateCap"></div>
     <div id="dateBars"></div>
     <div class="note" id="dateNote"></div>
   </div>
@@ -187,18 +187,21 @@
    Source: fresh .xlsx export of both live sheets, analyzed with exact-string matching (pandas),
    not UI filtering or reading comments/notes columns.
 ================================================================================= */
-const SOURCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ/edit?usp=sharing";
+const SOURCE_SHEET_URLS = {
+  1: "https://docs.google.com/spreadsheets/d/1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ/edit?usp=sharing",
+  2: "https://docs.google.com/spreadsheets/d/1ZSzNWIyoHA7UVRDA2cH9uVuhFa5uvhEmeBZifgokW74/edit?usp=sharing"
+};
 
 const DATA = {
   "updated": "27 Jul 2026",
   "sheets": [
     {
       "name": "Analytics",
-      "total": 395,
-      "conv": 173,
-      "whatsapp": 184,
-      "not_contacted": 38,
-      "contacted": 357,
+      "total": 401,
+      "conv": 185,
+      "whatsapp": 189,
+      "not_contacted": 27,
+      "contacted": 374,
       "followed": 62,
       "note": null
     },
@@ -244,7 +247,15 @@ const DATA = {
     }
   ],
   "recent_activity": {
-    "sheet": "Analytics",
+    "sheets": [
+      "Analytics",
+      "Corporates - June 2026",
+      "Corporate/Schools - March 2026",
+      "Free AI Workshop for Schools/Institutes"
+    ],
+    "total_sheets": 5,
+    "contacted_total": 417,
+    "followed_total": 86,
     "called_by_date": [
       {
         "date": "22 Jul",
@@ -260,7 +271,7 @@ const DATA = {
       },
       {
         "date": "27 Jul",
-        "n": 4
+        "n": 21
       }
     ],
     "followed_by_date": [
@@ -278,91 +289,257 @@ const DATA = {
         "name": "Sohan Perera",
         "phone": "+94772221210",
         "called": "22 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Bawantha",
         "phone": "+94773847692",
         "called": "23 Jul",
-        "followed": "24 Jul"
+        "followed": "24 Jul",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Mahendran Shankarnath",
         "phone": "+94787910869",
         "called": "23 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Fazna Zuhair",
         "phone": "+94702168643",
         "called": "23 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Vihanga Ravindu",
         "phone": "+94710446081",
         "called": "23 Jul",
-        "followed": "24 Jul"
+        "followed": "24 Jul",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "umanda deshani",
         "phone": "0710590629",
         "called": "23 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Manesh Neerodha",
         "phone": "+94775072865",
         "called": "24 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Zainab Rizan",
         "phone": "+94783308852",
         "called": "24 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Ruvini Thilakarathne",
         "phone": "+94701161414",
         "called": "23 Jul",
-        "followed": "27 Jul"
+        "followed": "27 Jul",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Dhanushaka Nayanajith",
         "phone": "+94773136244",
         "called": "24 Jul",
-        "followed": "27 Jul"
+        "followed": "27 Jul",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Cecil Hilrey Hi lrey",
         "phone": "+94775100334",
         "called": "24 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Damayanthi Wijesinghe",
         "phone": "+94758444785",
         "called": "27 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "black queen_..",
         "phone": "+94768685838",
         "called": "27 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Thisara Sachinthana",
         "phone": "+94781149032",
         "called": "27 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       },
       {
         "name": "Shehan Jude",
         "phone": "+94769003166",
         "called": "27 Jul",
-        "followed": "—"
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Geethika Kalhari Jayasinghe",
+        "phone": "+94718032242",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Viv Ek",
+        "phone": "+94772383916",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Nethmie Jayasundara",
+        "phone": "+94767400287",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Kokila Lakshan",
+        "phone": "+94712886859",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Kapila Hewagama 0771556866",
+        "phone": "+94771556866",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Nilantha Wijerathna",
+        "phone": "+94717596507",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Thilini Nirasha de Silvag",
+        "phone": "+94714478495",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Mohamed Ãfzal",
+        "phone": "+94752568606",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Yasas Gunawardena",
+        "phone": "+94773330185",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Mr. vishagan",
+        "phone": "+94756867561",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Ahamed",
+        "phone": "0752891661",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "J.A.S.M.N Jayasinghe",
+        "phone": "+94772366246",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Fathima Azha Razik",
+        "phone": "+94761378213",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Mohamed Casim Mohamed Rilwan",
+        "phone": "+94778589466",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Hamdhan Ali",
+        "phone": "+94772102611",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Al Ameen",
+        "phone": "+94767840323",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Mhd Kiyas",
+        "phone": "+94784959273",
+        "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
       }
     ]
   }
@@ -451,43 +628,59 @@ document.getElementById("fuLegend").innerHTML =
   `<div class="li"><span class="key-dot" style="background:var(--good)"></span>Followed up</div>` +
   `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>Not followed up</div>`;
 
-/* recent dated activity — Analytics only, partial data */
+/* recent dated activity — combined across every sheet that has "Date Called" /
+   "Date Followed Up" columns wired up. Sheets without those columns yet are
+   simply absent from this section until they're added. */
 const RA = DATA.recent_activity;
-const maxN = Math.max(...RA.called_by_date.map(d => d.n), ...RA.followed_by_date.map(d => d.n));
-function miniBarRow(d, colorVar, keyPrefix, leads) {
-  const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
-  const w = (d.n / maxN * 100).toFixed(1);
-  const leadRows = leads.map(l => `<div class="mini-lead"><span>${l.name}</span><span><a href="${SOURCE_SHEET_URL}" target="_blank" rel="noopener">${l.phone}</a></span></div>`).join("");
-  return `<div class="bar-mini-wrap">
-    <div class="bar-mini-row expandable" data-target="${key}">
-      <div class="chev">›</div>
-      <div class="dlabel">${d.date}</div>
-      <div class="track"><div class="fill" style="width:${w}%;background:var(${colorVar})"></div></div>
-      <div class="n">${d.n}</div>
-    </div>
-    <div class="bar-mini-detail" id="${key}">${leadRows}</div>
-  </div>`;
-}
-const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone }));
-const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone }));
 
-document.getElementById("dateBars").innerHTML =
-  `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(DATA.sheets.find(s=>s.name===RA.sheet).contacted)} contacted have a logged date</span></div>` +
-  RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d))).join("") +
-  `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(DATA.sheets.find(s=>s.name===RA.sheet).followed)} followed up have a logged date</span></div>` +
-  RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d))).join("");
+if (RA) {
+  const maxN = Math.max(...RA.called_by_date.map(d => d.n), ...RA.followed_by_date.map(d => d.n));
+  function miniBarRow(d, colorVar, keyPrefix, leads) {
+    const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
+    const w = (d.n / maxN * 100).toFixed(1);
+    const leadRows = leads.map(l => {
+      const url = SOURCE_SHEET_URLS[l.workbook] || Object.values(SOURCE_SHEET_URLS)[0];
+      return `<div class="mini-lead"><span>${l.name} <span style="color:var(--text-muted)">· ${l.sheet}</span></span><span><a href="${url}" target="_blank" rel="noopener">${l.phone}</a></span></div>`;
+    }).join("");
+    return `<div class="bar-mini-wrap">
+      <div class="bar-mini-row expandable" data-target="${key}">
+        <div class="chev">›</div>
+        <div class="dlabel">${d.date}</div>
+        <div class="track"><div class="fill" style="width:${w}%;background:var(${colorVar})"></div></div>
+        <div class="n">${d.n}</div>
+      </div>
+      <div class="bar-mini-detail" id="${key}">${leadRows}</div>
+    </div>`;
+  }
+  const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook }));
+  const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook }));
 
-document.querySelectorAll(".bar-mini-row.expandable").forEach(row => {
-  row.addEventListener("click", () => {
-    const detail = document.getElementById(row.dataset.target);
-    const open = detail.classList.toggle("open");
-    row.classList.toggle("open", open);
+  document.getElementById("dateBadge").textContent = `${RA.sheets.length} of ${RA.total_sheets} sheets · partial`;
+  document.getElementById("dateCap").textContent =
+    `"Date Called" / "Date Followed Up" columns are wired up on: ${RA.sheets.join(", ")}. Only leads with a logged date appear below — this is not a full historical record.`;
+
+  document.getElementById("dateBars").innerHTML =
+    `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.contacted_total)} contacted (on tracked sheets) have a logged date</span></div>` +
+    RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d))).join("") +
+    `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.followed_total)} followed up (on tracked sheets) have a logged date</span></div>` +
+    RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d))).join("");
+
+  document.querySelectorAll(".bar-mini-row.expandable").forEach(row => {
+    row.addEventListener("click", () => {
+      const detail = document.getElementById(row.dataset.target);
+      const open = detail.classList.toggle("open");
+      row.classList.toggle("open", open);
+    });
   });
-});
 
-
-document.getElementById("dateNote").innerHTML =
-  `These "Date Called"/"Date Followed Up" columns exist on the other sheets too but have no entries yet anywhere else — this section will fill out as the team logs dates going forward.`;
+  document.getElementById("dateNote").innerHTML =
+    `The other sheet(s) not listed above don't have these date columns wired up yet — this section will expand as that happens.`;
+} else {
+  document.getElementById("dateBadge").textContent = "no data yet";
+  document.getElementById("dateCap").textContent = "No sheet has a logged \"Date Called\" / \"Date Followed Up\" entry yet.";
+  document.getElementById("dateBars").innerHTML = "";
+  document.getElementById("dateNote").innerHTML = "";
+}
 
 /* tooltip */
 const tip = document.getElementById("tip");
