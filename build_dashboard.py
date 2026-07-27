@@ -47,11 +47,14 @@ SHEET_CONFIGS = [
     dict(workbook=1, sheet="AI Program Inquiries (Apr 2026)", display="AI Program Inquiries (Apr 2026)",
          name_col=5, phone_col=6, contacted_col=8, followed_col=10),
     dict(workbook=2, sheet="Corporates - June 2026", display="Corporates - June 2026",
-         name_col=1, phone_col=2, contacted_col=5, followed_col=7),
+         name_col=1, phone_col=2, contacted_col=5, followed_col=7,
+         date_called_col=13, date_followed_col=14, track_dates=True),
     dict(workbook=2, sheet="CorporateSchools - March 2026", display="Corporate/Schools - March 2026",
-         name_col=4, phone_col=5, contacted_col=8, followed_col=10),
+         name_col=4, phone_col=5, contacted_col=8, followed_col=10,
+         date_called_col=14, date_followed_col=15, track_dates=True),
     dict(workbook=1, sheet="Free AI Workshop for SchoolsIns", display="Free AI Workshop for Schools/Institutes",
-         name_col=2, phone_col=3, contacted_col=6, followed_col=8),
+         name_col=2, phone_col=3, contacted_col=6, followed_col=8,
+         date_called_col=11, date_followed_col=12, track_dates=True),
 ]
 
 
@@ -114,6 +117,8 @@ def analyze_sheet(xls, cfg):
                     phone=str(phone_val).strip() if pd.notna(phone_val) else "",
                     called=called or "—",
                     followed=followed_d or "—",
+                    sheet=cfg["display"],
+                    workbook=cfg["workbook"],
                 ))
         detail = rows
     return result, detail
@@ -143,21 +148,27 @@ def main():
     xls2 = pd.ExcelFile(wb2)
 
     sheets = []
-    analytics_detail = None
+    all_detail = []
     for cfg in SHEET_CONFIGS:
         xls = xls1 if cfg["workbook"] == 1 else xls2
         result, detail = analyze_sheet(xls, cfg)
         sheets.append(result)
         if detail is not None:
-            analytics_detail = detail
+            all_detail.extend(detail)
 
     recent_activity = None
-    if analytics_detail is not None:
+    if all_detail:
+        tracked_sheets = [cfg["display"] for cfg in SHEET_CONFIGS if cfg.get("track_dates")]
+        tracked_contacted = sum(s["contacted"] for s in sheets if s["name"] in tracked_sheets)
+        tracked_followed = sum(s["followed"] for s in sheets if s["name"] in tracked_sheets)
         recent_activity = dict(
-            sheet="Analytics",
-            called_by_date=bucket_by_date(analytics_detail, "called"),
-            followed_by_date=bucket_by_date(analytics_detail, "followed"),
-            detail=analytics_detail,
+            sheets=tracked_sheets,
+            total_sheets=len(SHEET_CONFIGS),
+            contacted_total=tracked_contacted,
+            followed_total=tracked_followed,
+            called_by_date=bucket_by_date(all_detail, "called"),
+            followed_by_date=bucket_by_date(all_detail, "followed"),
+            detail=all_detail,
         )
 
     data = dict(

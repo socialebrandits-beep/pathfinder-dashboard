@@ -162,8 +162,8 @@
 
   <!-- RECENT DATED ACTIVITY -->
   <div class="card">
-    <h2>Recent activity by date <span class="badge">Analytics only · partial</span></h2>
-    <div class="cap">Analytics recently added "Date Called" / "Date Followed Up" columns — only the most recent leads have a date logged yet. This is not a full historical record.</div>
+    <h2>Recent activity by date <span class="badge" id="dateBadge"></span></h2>
+    <div class="cap" id="dateCap"></div>
     <div id="dateBars"></div>
     <div class="note" id="dateNote"></div>
   </div>
@@ -187,7 +187,10 @@
    Source: fresh .xlsx export of both live sheets, analyzed with exact-string matching (pandas),
    not UI filtering or reading comments/notes columns.
 ================================================================================= */
-const SOURCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ/edit?usp=sharing";
+const SOURCE_SHEET_URLS = {
+  1: "https://docs.google.com/spreadsheets/d/1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ/edit?usp=sharing",
+  2: "https://docs.google.com/spreadsheets/d/1ZSzNWIyoHA7UVRDA2cH9uVuhFa5uvhEmeBZifgokW74/edit?usp=sharing"
+};
 
 const DATA = /*__DATA_JSON__*/;
 /* ============================================================================ */
@@ -274,43 +277,59 @@ document.getElementById("fuLegend").innerHTML =
   `<div class="li"><span class="key-dot" style="background:var(--good)"></span>Followed up</div>` +
   `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>Not followed up</div>`;
 
-/* recent dated activity — Analytics only, partial data */
+/* recent dated activity — combined across every sheet that has "Date Called" /
+   "Date Followed Up" columns wired up. Sheets without those columns yet are
+   simply absent from this section until they're added. */
 const RA = DATA.recent_activity;
-const maxN = Math.max(...RA.called_by_date.map(d => d.n), ...RA.followed_by_date.map(d => d.n));
-function miniBarRow(d, colorVar, keyPrefix, leads) {
-  const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
-  const w = (d.n / maxN * 100).toFixed(1);
-  const leadRows = leads.map(l => `<div class="mini-lead"><span>${l.name}</span><span><a href="${SOURCE_SHEET_URL}" target="_blank" rel="noopener">${l.phone}</a></span></div>`).join("");
-  return `<div class="bar-mini-wrap">
-    <div class="bar-mini-row expandable" data-target="${key}">
-      <div class="chev">›</div>
-      <div class="dlabel">${d.date}</div>
-      <div class="track"><div class="fill" style="width:${w}%;background:var(${colorVar})"></div></div>
-      <div class="n">${d.n}</div>
-    </div>
-    <div class="bar-mini-detail" id="${key}">${leadRows}</div>
-  </div>`;
-}
-const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone }));
-const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone }));
 
-document.getElementById("dateBars").innerHTML =
-  `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(DATA.sheets.find(s=>s.name===RA.sheet).contacted)} contacted have a logged date</span></div>` +
-  RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d))).join("") +
-  `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(DATA.sheets.find(s=>s.name===RA.sheet).followed)} followed up have a logged date</span></div>` +
-  RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d))).join("");
+if (RA) {
+  const maxN = Math.max(...RA.called_by_date.map(d => d.n), ...RA.followed_by_date.map(d => d.n));
+  function miniBarRow(d, colorVar, keyPrefix, leads) {
+    const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
+    const w = (d.n / maxN * 100).toFixed(1);
+    const leadRows = leads.map(l => {
+      const url = SOURCE_SHEET_URLS[l.workbook] || Object.values(SOURCE_SHEET_URLS)[0];
+      return `<div class="mini-lead"><span>${l.name} <span style="color:var(--text-muted)">· ${l.sheet}</span></span><span><a href="${url}" target="_blank" rel="noopener">${l.phone}</a></span></div>`;
+    }).join("");
+    return `<div class="bar-mini-wrap">
+      <div class="bar-mini-row expandable" data-target="${key}">
+        <div class="chev">›</div>
+        <div class="dlabel">${d.date}</div>
+        <div class="track"><div class="fill" style="width:${w}%;background:var(${colorVar})"></div></div>
+        <div class="n">${d.n}</div>
+      </div>
+      <div class="bar-mini-detail" id="${key}">${leadRows}</div>
+    </div>`;
+  }
+  const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook }));
+  const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook }));
 
-document.querySelectorAll(".bar-mini-row.expandable").forEach(row => {
-  row.addEventListener("click", () => {
-    const detail = document.getElementById(row.dataset.target);
-    const open = detail.classList.toggle("open");
-    row.classList.toggle("open", open);
+  document.getElementById("dateBadge").textContent = `${RA.sheets.length} of ${RA.total_sheets} sheets · partial`;
+  document.getElementById("dateCap").textContent =
+    `"Date Called" / "Date Followed Up" columns are wired up on: ${RA.sheets.join(", ")}. Only leads with a logged date appear below — this is not a full historical record.`;
+
+  document.getElementById("dateBars").innerHTML =
+    `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.contacted_total)} contacted (on tracked sheets) have a logged date</span></div>` +
+    RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d))).join("") +
+    `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.followed_total)} followed up (on tracked sheets) have a logged date</span></div>` +
+    RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d))).join("");
+
+  document.querySelectorAll(".bar-mini-row.expandable").forEach(row => {
+    row.addEventListener("click", () => {
+      const detail = document.getElementById(row.dataset.target);
+      const open = detail.classList.toggle("open");
+      row.classList.toggle("open", open);
+    });
   });
-});
 
-
-document.getElementById("dateNote").innerHTML =
-  `These "Date Called"/"Date Followed Up" columns exist on the other sheets too but have no entries yet anywhere else — this section will fill out as the team logs dates going forward.`;
+  document.getElementById("dateNote").innerHTML =
+    `The other sheet(s) not listed above don't have these date columns wired up yet — this section will expand as that happens.`;
+} else {
+  document.getElementById("dateBadge").textContent = "no data yet";
+  document.getElementById("dateCap").textContent = "No sheet has a logged \"Date Called\" / \"Date Followed Up\" entry yet.";
+  document.getElementById("dateBars").innerHTML = "";
+  document.getElementById("dateNote").innerHTML = "";
+}
 
 /* tooltip */
 const tip = document.getElementById("tip");
