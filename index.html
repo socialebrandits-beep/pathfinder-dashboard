@@ -190,59 +190,180 @@
 const SOURCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ/edit?usp=sharing";
 
 const DATA = {
-  updated: "26 Jul 2026",
-  sheets: [
+  "updated": "27 Jul 2026",
+  "sheets": [
     {
-      name: "Analytics",
-      total: 391, conv: 170, whatsapp: 183, not_contacted: 38,
-      contacted: 353, followed: 60,
-      note: null
+      "name": "Analytics",
+      "total": 395,
+      "conv": 173,
+      "whatsapp": 184,
+      "not_contacted": 38,
+      "contacted": 357,
+      "followed": 62,
+      "note": null
     },
     {
-      name: "AI Program Inquiries (Apr 2026)",
-      total: 278, conv: 104, whatsapp: 105, not_contacted: 69,
-      contacted: 209, followed: 75,
-      note: null
+      "name": "AI Program Inquiries (Apr 2026)",
+      "total": 278,
+      "conv": 104,
+      "whatsapp": 105,
+      "not_contacted": 69,
+      "contacted": 209,
+      "followed": 75,
+      "note": null
     },
     {
-      name: "Corporates - June 2026",
-      total: 39, conv: 26, whatsapp: 0, not_contacted: 13,
-      contacted: 26, followed: 15,
-      note: null
+      "name": "Corporates - June 2026",
+      "total": 39,
+      "conv": 26,
+      "whatsapp": 1,
+      "not_contacted": 12,
+      "contacted": 27,
+      "followed": 15,
+      "note": null
     },
     {
-      name: "Corporate/Schools - March 2026",
-      total: 13, conv: 10, whatsapp: 0, not_contacted: 3,
-      contacted: 10, followed: 9,
-      note: null
+      "name": "Corporate/Schools - March 2026",
+      "total": 13,
+      "conv": 10,
+      "whatsapp": 0,
+      "not_contacted": 3,
+      "contacted": 10,
+      "followed": 9,
+      "note": null
     },
     {
-      name: "Free AI Workshop for Schools/Institutes",
-      total: 32, conv: 6, whatsapp: 0, not_contacted: 26,
-      contacted: 6, followed: 0,
-      note: "No leads on this sheet have been followed up yet — most were only registered in the last few weeks."
+      "name": "Free AI Workshop for Schools/Institutes",
+      "total": 32,
+      "conv": 6,
+      "whatsapp": 0,
+      "not_contacted": 26,
+      "contacted": 6,
+      "followed": 0,
+      "note": "No leads on this sheet have been followed up yet — check whether these are recent leads or if follow-ups are overdue."
     }
   ],
-  /* Recent dated activity — Analytics sheet only. Columns N ("Date Called") and O ("Date Followed
-     Up") were only just added: as of this sweep just 11 of Analytics's 353 contacted leads have a
-     Date Called value, and 2 of its 60 followed-up leads have a Date Followed Up value (all dated
-     22–24 Jul 2026). This is a partial, very recent slice — not a historical breakdown. */
-  recent_activity: {
-    sheet: "Analytics",
-    called_by_date: [ { date: "22 Jul", n: 1 }, { date: "23 Jul", n: 6 }, { date: "24 Jul", n: 4 } ],
-    followed_by_date: [ { date: "24 Jul", n: 2 } ],
-    detail: [
-      { name: "Sohan Perera", phone: "+94772221210", called: "22 Jul", followed: "—" },
-      { name: "Bawantha", phone: "+94773847692", called: "23 Jul", followed: "24 Jul" },
-      { name: "Mahendran Shankarnath", phone: "+94787910869", called: "23 Jul", followed: "—" },
-      { name: "Fazna Zuhair", phone: "+94702168643", called: "23 Jul", followed: "—" },
-      { name: "Vihanga Ravindu", phone: "+94710446081", called: "23 Jul", followed: "24 Jul" },
-      { name: "umanda deshani", phone: "0710590629", called: "23 Jul", followed: "—" },
-      { name: "Manesh Neerodha", phone: "+94775072865", called: "24 Jul", followed: "—" },
-      { name: "Zainab Rizan", phone: "+94783308852", called: "24 Jul", followed: "—" },
-      { name: "Ruvini Thilakarathne", phone: "+94701161414", called: "23 Jul", followed: "—" },
-      { name: "Dhanushaka Nayanajith", phone: "+94773136244", called: "24 Jul", followed: "—" },
-      { name: "Cecil Hilrey Hi lrey", phone: "+94775100334", called: "24 Jul", followed: "—" }
+  "recent_activity": {
+    "sheet": "Analytics",
+    "called_by_date": [
+      {
+        "date": "22 Jul",
+        "n": 1
+      },
+      {
+        "date": "23 Jul",
+        "n": 6
+      },
+      {
+        "date": "24 Jul",
+        "n": 4
+      },
+      {
+        "date": "27 Jul",
+        "n": 4
+      }
+    ],
+    "followed_by_date": [
+      {
+        "date": "24 Jul",
+        "n": 2
+      },
+      {
+        "date": "27 Jul",
+        "n": 2
+      }
+    ],
+    "detail": [
+      {
+        "name": "Sohan Perera",
+        "phone": "+94772221210",
+        "called": "22 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Bawantha",
+        "phone": "+94773847692",
+        "called": "23 Jul",
+        "followed": "24 Jul"
+      },
+      {
+        "name": "Mahendran Shankarnath",
+        "phone": "+94787910869",
+        "called": "23 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Fazna Zuhair",
+        "phone": "+94702168643",
+        "called": "23 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Vihanga Ravindu",
+        "phone": "+94710446081",
+        "called": "23 Jul",
+        "followed": "24 Jul"
+      },
+      {
+        "name": "umanda deshani",
+        "phone": "0710590629",
+        "called": "23 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Manesh Neerodha",
+        "phone": "+94775072865",
+        "called": "24 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Zainab Rizan",
+        "phone": "+94783308852",
+        "called": "24 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Ruvini Thilakarathne",
+        "phone": "+94701161414",
+        "called": "23 Jul",
+        "followed": "27 Jul"
+      },
+      {
+        "name": "Dhanushaka Nayanajith",
+        "phone": "+94773136244",
+        "called": "24 Jul",
+        "followed": "27 Jul"
+      },
+      {
+        "name": "Cecil Hilrey Hi lrey",
+        "phone": "+94775100334",
+        "called": "24 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Damayanthi Wijesinghe",
+        "phone": "+94758444785",
+        "called": "27 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "black queen_..",
+        "phone": "+94768685838",
+        "called": "27 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Thisara Sachinthana",
+        "phone": "+94781149032",
+        "called": "27 Jul",
+        "followed": "—"
+      },
+      {
+        "name": "Shehan Jude",
+        "phone": "+94769003166",
+        "called": "27 Jul",
+        "followed": "—"
+      }
     ]
   }
 };
