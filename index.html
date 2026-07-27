@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pathfinder Leads Dashboard</title>
+<style>
+  :root { color-scheme: light dark; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;   /* Phone conversation */
+    --series-2: #eb6834;   /* WhatsApp-only */
+    --gray-mark: #b5b3ac;  /* Not contacted */
+    --good: #2f9e44;       /* Followed up */
+    --good-text: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --gray-mark: #6b6a65;
+      --good: #3fb457;
+      --good-text: #0ca30c;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--page); }
+  .viz-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 32px 24px 48px;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  header.head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  h1 { font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+  .stamp { font-size: 12.5px; color: var(--text-muted); }
+  .sub { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 24px; }
+
+  .hero-card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 24px 20px; margin-bottom: 16px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 28px 40px;
+  }
+  .hero-num { font-size: 52px; font-weight: 650; line-height: 1; letter-spacing: -0.02em; }
+  .hero-label { font-size: 13.5px; color: var(--text-secondary); margin-top: 6px; }
+  .hero-side { display: flex; gap: 32px; flex-wrap: wrap; }
+  .mini { min-width: 110px; }
+  .mini .v { font-size: 22px; font-weight: 600; }
+  .mini .l { font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+  .key-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px 22px 18px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 14.5px; font-weight: 600; margin-bottom: 2px; }
+  .card .cap { font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; }
+
+  /* stacked horizontal bars */
+  .stackrow { margin-bottom: 18px; }
+  .stackrow:last-child { margin-bottom: 4px; }
+  .rl { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13px; margin-bottom: 7px; }
+  .rl b { font-weight: 600; }
+  .rl span { color: var(--text-muted); }
+  .stack { display: flex; height: 22px; border-radius: 5px; overflow: hidden; background: var(--grid); }
+  .seg { position: relative; min-width: 2px; cursor: default; transition: opacity .12s; }
+  .seg + .seg { margin-left: 2px; }
+  .stack:hover .seg { opacity: .55; }
+  .stack .seg:hover { opacity: 1; }
+  .seg-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; color: #fff; pointer-events: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px 20px; margin-top: 14px; font-size: 12.5px; color: var(--text-secondary); }
+  .legend .li { display: flex; align-items: center; gap: 7px; }
+  .row-note { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+
+  .note { font-size: 12px; color: var(--text-muted); margin-top: 14px; line-height: 1.5; }
+
+  /* tooltip */
+  #tip { position: fixed; z-index: 10; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 11px; font-size: 12.5px; color: var(--text-primary); box-shadow: 0 4px 14px rgba(0,0,0,.12);
+    opacity: 0; transition: opacity .1s; max-width: 260px; }
+  #tip .t1 { font-weight: 600; margin-bottom: 2px; }
+  #tip .t2 { color: var(--text-secondary); }
+
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: 2px; margin-left: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: var(--text-muted); font-size: 12px; padding: 6px 10px 8px; border-bottom: 1px solid var(--grid); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+  .tar { text-align: right; }
+  .bar-mini-wrap { margin-bottom: 4px; }
+  .bar-mini-row { display: flex; align-items: center; gap: 10px; padding: 4px 6px; margin-bottom: 4px; font-size: 13px; border-radius: 6px; }
+  .bar-mini-row .dlabel { min-width: 72px; color: var(--text-secondary); }
+  .bar-mini-row .track { flex: 1; height: 16px; border-radius: 4px; background: var(--grid); overflow: hidden; display: flex; }
+  .bar-mini-row .fill { height: 100%; }
+  .bar-mini-row .n { min-width: 18px; text-align: right; font-weight: 600; }
+  .bar-mini-row.expandable { cursor: pointer; }
+  .bar-mini-row.expandable:hover { background: var(--grid); }
+  .bar-mini-row .chev { width: 12px; color: var(--text-muted); transition: transform .15s; font-size: 13px; }
+  .bar-mini-row.open .chev { transform: rotate(90deg); }
+  .bar-mini-detail { display: none; margin: 0 6px 10px 94px; padding: 6px 12px; background: var(--page); border-radius: 6px; }
+  .bar-mini-detail.open { display: block; }
+  .mini-lead { display: flex; justify-content: space-between; gap: 16px; font-size: 12.5px; color: var(--text-secondary); padding: 3px 0; border-bottom: 1px dashed var(--grid); }
+  .mini-lead:last-child { border-bottom: none; }
+  .mini-lead a { color: var(--series-1); text-decoration: none; }
+  .mini-lead a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+
+  <header class="head">
+    <h1>Pathfinder — Lead Contact Dashboard</h1>
+    <div class="stamp" id="stamp"></div>
+  </header>
+  <div class="sub">All inquiry sheets combined · exact-match sweep of the live spreadsheets</div>
+
+  <!-- HERO + KPI ROW -->
+  <div class="hero-card">
+    <div>
+      <div class="hero-num" id="heroTotal"></div>
+      <div class="hero-label">Total leads across all sheets</div>
+    </div>
+    <div class="hero-side" id="kpis"></div>
+  </div>
+
+  <!-- CONTACT OUTCOME PER SHEET -->
+  <div class="card">
+    <h2>How every lead was reached</h2>
+    <div class="cap">Per sheet: phone conversation, WhatsApp-only, or not contacted at all</div>
+    <div id="stacks"></div>
+    <div class="legend" id="legend"></div>
+    <div class="note" id="contactNote"></div>
+  </div>
+
+  <!-- FOLLOW UP -->
+  <div class="card">
+    <h2>Follow-up progress</h2>
+    <div class="cap">Of the leads contacted on each sheet, how many have since been followed up</div>
+    <div id="fuStacks"></div>
+    <div class="legend" id="fuLegend"></div>
+  </div>
+
+  <!-- RECENT DATED ACTIVITY -->
+  <div class="card">
+    <h2>Recent activity by date <span class="badge">Analytics only · partial</span></h2>
+    <div class="cap">Analytics recently added "Date Called" / "Date Followed Up" columns — only the most recent leads have a date logged yet. This is not a full historical record.</div>
+    <div id="dateBars"></div>
+    <div class="note" id="dateNote"></div>
+  </div>
+
+</div>
+</div>
+<div id="tip"><div class="t1"></div><div class="t2"></div></div>
+
+<script>
+/* ================= DATA — replaced by each full sweep run =================
+   Methodology (exact-match, per sheet, ONE rule everywhere):
+   - Contacted = the contact column reads exactly "Yes" (phone conversation) OR exactly
+     "Couldn't Connect, Sent Whatsapp" (WhatsApp-only reply). Both count as contacted — the mode
+     of contact (phone vs. WhatsApp) is shown as a separate segment in the chart below for
+     visibility, but both roll into the single "contacted" figure everywhere else on this page.
+     Only "No" or a blank cell counts as not contacted. This applies uniformly to all 5 sheets.
+   - Followed up = the follow-up column reads exactly "Yes".
+   - Columns used: Corporates - June 2026 (F contacted / H followed up), Corporate/Schools - March
+     2026 (I / K), Analytics (I / K), Free AI Workshop (G / I), AI Program Inquiries Apr 2026 (I / K).
+   - "Not followed up" = contacted − followed up.
+   Source: fresh .xlsx export of both live sheets, analyzed with exact-string matching (pandas),
+   not UI filtering or reading comments/notes columns.
+================================================================================= */
+const SOURCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ/edit?usp=sharing";
+
+const DATA = {
+  updated: "26 Jul 2026",
+  sheets: [
+    {
+      name: "Analytics",
+      total: 391, conv: 170, whatsapp: 183, not_contacted: 38,
+      contacted: 353, followed: 60,
+      note: null
+    },
+    {
+      name: "AI Program Inquiries (Apr 2026)",
+      total: 278, conv: 104, whatsapp: 105, not_contacted: 69,
+      contacted: 209, followed: 75,
+      note: null
+    },
+    {
+      name: "Corporates - June 2026",
+      total: 39, conv: 26, whatsapp: 0, not_contacted: 13,
+      contacted: 26, followed: 15,
+      note: null
+    },
+    {
+      name: "Corporate/Schools - March 2026",
+      total: 13, conv: 10, whatsapp: 0, not_contacted: 3,
+      contacted: 10, followed: 9,
+      note: null
+    },
+    {
+      name: "Free AI Workshop for Schools/Institutes",
+      total: 32, conv: 6, whatsapp: 0, not_contacted: 26,
+      contacted: 6, followed: 0,
+      note: "No leads on this sheet have been followed up yet — most were only registered in the last few weeks."
+    }
+  ],
+  /* Recent dated activity — Analytics sheet only. Columns N ("Date Called") and O ("Date Followed
+     Up") were only just added: as of this sweep just 11 of Analytics's 353 contacted leads have a
+     Date Called value, and 2 of its 60 followed-up leads have a Date Followed Up value (all dated
+     22–24 Jul 2026). This is a partial, very recent slice — not a historical breakdown. */
+  recent_activity: {
+    sheet: "Analytics",
+    called_by_date: [ { date: "22 Jul", n: 1 }, { date: "23 Jul", n: 6 }, { date: "24 Jul", n: 4 } ],
+    followed_by_date: [ { date: "24 Jul", n: 2 } ],
+    detail: [
+      { name: "Sohan Perera", phone: "+94772221210", called: "22 Jul", followed: "—" },
+      { name: "Bawantha", phone: "+94773847692", called: "23 Jul", followed: "24 Jul" },
+      { name: "Mahendran Shankarnath", phone: "+94787910869", called: "23 Jul", followed: "—" },
+      { name: "Fazna Zuhair", phone: "+94702168643", called: "23 Jul", followed: "—" },
+      { name: "Vihanga Ravindu", phone: "+94710446081", called: "23 Jul", followed: "24 Jul" },
+      { name: "umanda deshani", phone: "0710590629", called: "23 Jul", followed: "—" },
+      { name: "Manesh Neerodha", phone: "+94775072865", called: "24 Jul", followed: "—" },
+      { name: "Zainab Rizan", phone: "+94783308852", called: "24 Jul", followed: "—" },
+      { name: "Ruvini Thilakarathne", phone: "+94701161414", called: "23 Jul", followed: "—" },
+      { name: "Dhanushaka Nayanajith", phone: "+94773136244", called: "24 Jul", followed: "—" },
+      { name: "Cecil Hilrey Hi lrey", phone: "+94775100334", called: "24 Jul", followed: "—" }
+    ]
+  }
+};
+/* ============================================================================ */
+
+DATA.sheets.forEach(s => {
+  s.not_followed = s.contacted - s.followed;
+  /* not contacted, for KPI/classification purposes = total - contacted (contacted already
+     includes both phone conversation and WhatsApp-only, per the methodology note above) */
+  s.not_contacted_kpi = s.total - s.contacted;
+});
+
+const fmt = n => n.toLocaleString("en-US");
+const pct = (n, d) => d ? Math.round(n / d * 100) : 0;
+
+const combined = { name: "All sheets", total: 0, conv: 0, whatsapp: 0, not_contacted: 0, contacted: 0, followed: 0 };
+DATA.sheets.forEach(s => {
+  ["total","conv","whatsapp","not_contacted","contacted","followed"].forEach(k => combined[k] += s[k]);
+});
+combined.not_followed = combined.contacted - combined.followed;
+combined.not_contacted_kpi = combined.total - combined.contacted;
+
+document.getElementById("stamp").textContent = "Last updated " + DATA.updated;
+document.getElementById("heroTotal").textContent = fmt(combined.total);
+
+/* KPI row — 5 headline metrics */
+const kpis = [
+  { v: combined.contacted, l: "Contacted", dot: "--series-1", sub: pct(combined.contacted, combined.total) + "%" },
+  { v: combined.followed, l: "Followed up", dot: "--good", sub: pct(combined.followed, combined.contacted) + "% of contacted" },
+  { v: combined.not_followed, l: "Not followed up", dot: "--series-2", sub: pct(combined.not_followed, combined.contacted) + "% of contacted" },
+  { v: combined.not_contacted_kpi, l: "Not contacted", dot: "--gray-mark", sub: pct(combined.not_contacted_kpi, combined.total) + "%" }
+];
+document.getElementById("kpis").innerHTML = kpis.map(k =>
+  `<div class="mini"><div class="v">${fmt(k.v)} <span style="font-size:12.5px;font-weight:500;color:var(--text-muted)">${k.sub}</span></div>
+   <div class="l"><span class="key-dot" style="background:var(${k.dot})"></span>${k.l}</div></div>`).join("");
+
+/* stacked bars — phone / whatsapp / not contacted, always summing to total */
+const rows = [combined, ...DATA.sheets];
+document.getElementById("stacks").innerHTML = rows.map(s => {
+  const segs = [
+    { v: s.conv, css: "--series-1", label: "Phone conversation" },
+    { v: s.whatsapp, css: "--series-2", label: "WhatsApp-only" },
+    { v: s.not_contacted, css: "--gray-mark", label: "Not contacted" }
+  ].map(seg => {
+    if (!seg.v) return "";
+    const w = (seg.v / s.total * 100).toFixed(2);
+    const show = seg.v / s.total > 0.1;
+    return `<div class="seg" style="width:${w}%;background:var(${seg.css})"
+      data-t1="${seg.label}" data-t2="${fmt(seg.v)} leads · ${pct(seg.v, s.total)}% of ${s.name}">
+      ${show ? `<div class="seg-label">${pct(seg.v, s.total)}%</div>` : ""}</div>`;
+  }).join("");
+  const noteHtml = s.note ? `<div class="row-note">${s.note}</div>` : "";
+  return `<div class="stackrow">
+    <div class="rl"><b>${s.name}</b><span>${fmt(s.total)} leads</span></div>
+    <div class="stack">${segs}</div>${noteHtml}</div>`;
+}).join("");
+
+document.getElementById("legend").innerHTML =
+  `<div class="li"><span class="key-dot" style="background:var(--series-1)"></span>Phone conversation</div>` +
+  `<div class="li"><span class="key-dot" style="background:var(--series-2)"></span>WhatsApp-only</div>` +
+  `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>Not contacted</div>`;
+
+document.getElementById("contactNote").innerHTML =
+  `"Contacted" (used in the KPI row and the follow-up card below) = phone conversation OR WhatsApp-only reply, on every sheet. The chart above splits them into separate segments for visibility, but both count as contacted everywhere else on this page.`;
+
+/* follow-up bars — followed up vs not followed up, out of contacted */
+document.getElementById("fuStacks").innerHTML = rows.map(s => {
+  const segs = [
+    { v: s.followed, css: "--good", label: "Followed up" },
+    { v: s.not_followed, css: "--gray-mark", label: "Not followed up" }
+  ].map(seg => {
+    if (!seg.v) return "";
+    const w = (seg.v / s.contacted * 100).toFixed(2);
+    const show = s.contacted && seg.v / s.contacted > 0.1;
+    return `<div class="seg" style="width:${w}%;background:var(${seg.css})"
+      data-t1="${seg.label}" data-t2="${fmt(seg.v)} leads · ${pct(seg.v, s.contacted)}% of ${s.name}'s contacted leads">
+      ${show ? `<div class="seg-label">${pct(seg.v, s.contacted)}%</div>` : ""}</div>`;
+  }).join("");
+  return `<div class="stackrow">
+    <div class="rl"><b>${s.name}</b><span>${fmt(s.contacted)} contacted</span></div>
+    <div class="stack">${s.contacted ? segs : ""}</div></div>`;
+}).join("");
+
+document.getElementById("fuLegend").innerHTML =
+  `<div class="li"><span class="key-dot" style="background:var(--good)"></span>Followed up</div>` +
+  `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>Not followed up</div>`;
+
+/* recent dated activity — Analytics only, partial data */
+const RA = DATA.recent_activity;
+const maxN = Math.max(...RA.called_by_date.map(d => d.n), ...RA.followed_by_date.map(d => d.n));
+function miniBarRow(d, colorVar, keyPrefix, leads) {
+  const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
+  const w = (d.n / maxN * 100).toFixed(1);
+  const leadRows = leads.map(l => `<div class="mini-lead"><span>${l.name}</span><span><a href="${SOURCE_SHEET_URL}" target="_blank" rel="noopener">${l.phone}</a></span></div>`).join("");
+  return `<div class="bar-mini-wrap">
+    <div class="bar-mini-row expandable" data-target="${key}">
+      <div class="chev">›</div>
+      <div class="dlabel">${d.date}</div>
+      <div class="track"><div class="fill" style="width:${w}%;background:var(${colorVar})"></div></div>
+      <div class="n">${d.n}</div>
+    </div>
+    <div class="bar-mini-detail" id="${key}">${leadRows}</div>
+  </div>`;
+}
+const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone }));
+const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone }));
+
+document.getElementById("dateBars").innerHTML =
+  `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(DATA.sheets.find(s=>s.name===RA.sheet).contacted)} contacted have a logged date</span></div>` +
+  RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d))).join("") +
+  `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(DATA.sheets.find(s=>s.name===RA.sheet).followed)} followed up have a logged date</span></div>` +
+  RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d))).join("");
+
+document.querySelectorAll(".bar-mini-row.expandable").forEach(row => {
+  row.addEventListener("click", () => {
+    const detail = document.getElementById(row.dataset.target);
+    const open = detail.classList.toggle("open");
+    row.classList.toggle("open", open);
+  });
+});
+
+
+document.getElementById("dateNote").innerHTML =
+  `These "Date Called"/"Date Followed Up" columns exist on the other sheets too but have no entries yet anywhere else — this section will fill out as the team logs dates going forward.`;
+
+/* tooltip */
+const tip = document.getElementById("tip");
+document.addEventListener("mousemove", e => {
+  const seg = e.target.closest(".seg");
+  if (seg && seg.dataset.t1) {
+    tip.querySelector(".t1").textContent = seg.dataset.t1;
+    tip.querySelector(".t2").textContent = seg.dataset.t2;
+    tip.style.opacity = 1;
+    const x = Math.min(e.clientX + 14, window.innerWidth - 270);
+    tip.style.left = x + "px";
+    tip.style.top = (e.clientY + 16) + "px";
+  } else tip.style.opacity = 0;
+});
+</script>
+</body>
+</html>
