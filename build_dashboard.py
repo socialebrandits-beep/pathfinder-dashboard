@@ -22,6 +22,10 @@ few rounds to nail down correctly):
   - "total" = number of rows with a non-empty Name cell (trailing template
     rows in the sheet have no name and are excluded).
   - This rule is applied uniformly across all 5 sheets.
+  - "Duplicate rows" = each sheet's final column is a manually-maintained
+    uniqueness marker that reads exactly "Unique" for every normal row. Any
+    row where that cell is non-blank and NOT "Unique" is a flagged duplicate;
+    we surface the name/phone/sheet and the flag text as-is.
 """
 import io
 import json
@@ -43,18 +47,23 @@ WHATSAPP = "Couldn't Connect, Sent Whatsapp"
 SHEET_CONFIGS = [
     dict(workbook=1, sheet="Analytics - With Colour Codes", display="Analytics",
          name_col=5, phone_col=6, contacted_col=8, followed_col=10,
-         date_called_col=13, date_followed_col=14, track_dates=True),
+         date_called_col=13, date_followed_col=14, track_dates=True,
+         unique_col=20),
     dict(workbook=1, sheet="AI Program Inquiries (Apr 2026)", display="AI Program Inquiries (Apr 2026)",
-         name_col=5, phone_col=6, contacted_col=8, followed_col=10),
+         name_col=5, phone_col=6, contacted_col=8, followed_col=10,
+         unique_col=18),
     dict(workbook=2, sheet="Corporates - June 2026", display="Corporates - June 2026",
          name_col=1, phone_col=2, contacted_col=5, followed_col=7,
-         date_called_col=13, date_followed_col=14, track_dates=True),
+         date_called_col=13, date_followed_col=14, track_dates=True,
+         unique_col=15),
     dict(workbook=2, sheet="CorporateSchools - March 2026", display="Corporate/Schools - March 2026",
          name_col=4, phone_col=5, contacted_col=8, followed_col=10,
-         date_called_col=14, date_followed_col=15, track_dates=True),
+         date_called_col=14, date_followed_col=15, track_dates=True,
+         unique_col=17),
     dict(workbook=1, sheet="Free AI Workshop for SchoolsIns", display="Free AI Workshop for Schools/Institutes",
          name_col=2, phone_col=3, contacted_col=6, followed_col=8,
-         date_called_col=11, date_followed_col=12, track_dates=True),
+         date_called_col=11, date_followed_col=12, track_dates=True,
+         unique_col=16),
 ]
 
 
@@ -121,7 +130,28 @@ def analyze_sheet(xls, cfg):
                     workbook=cfg["workbook"],
                 ))
         detail = rows
-    return result, detail
+
+    # Duplicate-row scan: every sheet has a final "Unique"-marker column, filled in
+    # manually by the team for every row. It reads exactly "Unique" for normal rows;
+    # anything else non-blank means that row has been flagged as a duplicate (the
+    # flag text itself varies — we surface it as-is rather than assuming one format).
+    dup_rows = []
+    if cfg.get("unique_col") is not None:
+        for _, r in data.iterrows():
+            marker = r[cfg["unique_col"]]
+            marker_str = str(marker).strip() if pd.notna(marker) else ""
+            if marker_str and marker_str.lower() != "unique":
+                name_val = r[cfg["name_col"]]
+                phone_val = r[cfg["phone_col"]]
+                dup_rows.append(dict(
+                    name=str(name_val).strip() if pd.notna(name_val) else "",
+                    phone=str(phone_val).strip() if pd.notna(phone_val) else "",
+                    sheet=cfg["display"],
+                    workbook=cfg["workbook"],
+                    flag=marker_str,
+                ))
+
+    return result, detail, dup_rows
 
 
 def bucket_by_date(detail, field):
@@ -149,12 +179,14 @@ def main():
 
     sheets = []
     all_detail = []
+    all_duplicates = []
     for cfg in SHEET_CONFIGS:
         xls = xls1 if cfg["workbook"] == 1 else xls2
-        result, detail = analyze_sheet(xls, cfg)
+        result, detail, dup_rows = analyze_sheet(xls, cfg)
         sheets.append(result)
         if detail is not None:
             all_detail.extend(detail)
+        all_duplicates.extend(dup_rows)
 
     recent_activity = None
     if all_detail:
@@ -175,6 +207,7 @@ def main():
         updated=datetime.now(timezone.utc).strftime("%-d %b %Y"),
         sheets=sheets,
         recent_activity=recent_activity,
+        duplicates=all_duplicates,
     )
 
     with open("template.html", "r", encoding="utf-8") as f:

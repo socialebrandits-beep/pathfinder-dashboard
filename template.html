@@ -168,6 +168,13 @@
     <div class="note" id="dateNote"></div>
   </div>
 
+  <!-- DUPLICATE ROWS -->
+  <div class="card">
+    <h2>Duplicate rows <span class="badge" id="dupBadge"></span></h2>
+    <div class="cap">Every sheet has a final "Unique" marker column, maintained by the team. Any row flagged as anything other than "Unique" shows up here.</div>
+    <div id="dupList"></div>
+  </div>
+
 </div>
 </div>
 <div id="tip"><div class="t1"></div><div class="t2"></div></div>
@@ -329,6 +336,19 @@ if (RA) {
   document.getElementById("dateCap").textContent = "No sheet has a logged \"Date Called\" / \"Date Followed Up\" entry yet.";
   document.getElementById("dateBars").innerHTML = "";
   document.getElementById("dateNote").innerHTML = "";
+}
+
+/* duplicate rows — flagged by the team's own "Unique" marker column on every sheet.
+   Anything other than exactly "Unique" (and non-blank) is a flagged duplicate. */
+const DUPES = DATA.duplicates || [];
+document.getElementById("dupBadge").textContent = DUPES.length ? `${DUPES.length} flagged` : "none";
+if (DUPES.length === 0) {
+  document.getElementById("dupList").innerHTML = `<div class="note" style="margin-top:0">No duplicate rows detected as of last update.</div>`;
+} else {
+  document.getElementById("dupList").innerHTML = DUPES.map(d => {
+    const url = SOURCE_SHEET_URLS[d.workbook] || Object.values(SOURCE_SHEET_URLS)[0];
+    return `<div class="mini-lead"><span>${d.name} <span style="color:var(--text-muted)">· ${d.sheet} · ${d.flag}</span></span><span><a href="${url}" target="_blank" rel="noopener">${d.phone}</a></span></div>`;
+  }).join("");
 }
 
 /* tooltip */
