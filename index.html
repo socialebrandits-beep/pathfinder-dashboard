@@ -168,6 +168,13 @@
     <div class="note" id="dateNote"></div>
   </div>
 
+  <!-- DUPLICATE ROWS -->
+  <div class="card">
+    <h2>Duplicate rows <span class="badge" id="dupBadge"></span></h2>
+    <div class="cap">Every sheet has a final "Unique" marker column, maintained by the team. Any row flagged as anything other than "Unique" shows up here.</div>
+    <div id="dupList"></div>
+  </div>
+
 </div>
 </div>
 <div id="tip"><div class="t1"></div><div class="t2"></div></div>
@@ -193,15 +200,15 @@ const SOURCE_SHEET_URLS = {
 };
 
 const DATA = {
-  "updated": "27 Jul 2026",
+  "updated": "28 Jul 2026",
   "sheets": [
     {
       "name": "Analytics",
-      "total": 401,
-      "conv": 185,
-      "whatsapp": 189,
-      "not_contacted": 27,
-      "contacted": 374,
+      "total": 406,
+      "conv": 194,
+      "whatsapp": 196,
+      "not_contacted": 16,
+      "contacted": 390,
       "followed": 62,
       "note": null
     },
@@ -218,10 +225,10 @@ const DATA = {
     {
       "name": "Corporates - June 2026",
       "total": 39,
-      "conv": 26,
+      "conv": 27,
       "whatsapp": 1,
-      "not_contacted": 12,
-      "contacted": 27,
+      "not_contacted": 11,
+      "contacted": 28,
       "followed": 15,
       "note": null
     },
@@ -237,10 +244,10 @@ const DATA = {
     },
     {
       "name": "Free AI Workshop for Schools/Institutes",
-      "total": 32,
+      "total": 33,
       "conv": 6,
       "whatsapp": 0,
-      "not_contacted": 26,
+      "not_contacted": 27,
       "contacted": 6,
       "followed": 0,
       "note": "No leads on this sheet have been followed up yet — check whether these are recent leads or if follow-ups are overdue."
@@ -254,7 +261,7 @@ const DATA = {
       "Free AI Workshop for Schools/Institutes"
     ],
     "total_sheets": 5,
-    "contacted_total": 417,
+    "contacted_total": 434,
     "followed_total": 86,
     "called_by_date": [
       {
@@ -272,6 +279,10 @@ const DATA = {
       {
         "date": "27 Jul",
         "n": 21
+      },
+      {
+        "date": "28 Jul",
+        "n": 17
       }
     ],
     "followed_by_date": [
@@ -502,9 +513,33 @@ const DATA = {
         "workbook": 1
       },
       {
+        "name": "Mohamed Naslin",
+        "phone": "+94758838381",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Sachith Rupasinghe",
+        "phone": "+94771559583",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
         "name": "Fathima Azha Razik",
         "phone": "+94761378213",
         "called": "27 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Roshan Wickramathilaka",
+        "phone": "+94773503550",
+        "called": "28 Jul",
         "followed": "—",
         "sheet": "Analytics",
         "workbook": 1
@@ -534,15 +569,128 @@ const DATA = {
         "workbook": 1
       },
       {
+        "name": "Ayeshan",
+        "phone": "+94712862892",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Minu Navangana",
+        "phone": "+94789554389",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Jayod Udukalage",
+        "phone": "+94770817062",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
         "name": "Mhd Kiyas",
         "phone": "+94784959273",
         "called": "27 Jul",
         "followed": "—",
         "sheet": "Analytics",
         "workbook": 1
+      },
+      {
+        "name": "Aba DiZzanayake",
+        "phone": "+94761903997",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Abdur Rahman Kiyas",
+        "phone": "+94740143546",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Udara Malin Ruwanpura",
+        "phone": "+94766563530",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Sanjeewa Dayarathna",
+        "phone": "+94777493057",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Hoshiya Anojan",
+        "phone": "+94773937397",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Eran Manamperi",
+        "phone": "+94704405090",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Akalanka Sooriyabandara",
+        "phone": "+94772349491",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Akash_☆",
+        "phone": "+94729292322",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Sumithra Sathiyaseelan",
+        "phone": "+94766217743",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Upeksha Rajapaksha",
+        "phone": "+94769058043",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1
+      },
+      {
+        "name": "Rukshani Refai",
+        "phone": "+94722991717",
+        "called": "28 Jul",
+        "followed": "—",
+        "sheet": "Corporates - June 2026",
+        "workbook": 2
       }
     ]
-  }
+  },
+  "duplicates": []
 };
 /* ============================================================================ */
 
@@ -680,6 +828,19 @@ if (RA) {
   document.getElementById("dateCap").textContent = "No sheet has a logged \"Date Called\" / \"Date Followed Up\" entry yet.";
   document.getElementById("dateBars").innerHTML = "";
   document.getElementById("dateNote").innerHTML = "";
+}
+
+/* duplicate rows — flagged by the team's own "Unique" marker column on every sheet.
+   Anything other than exactly "Unique" (and non-blank) is a flagged duplicate. */
+const DUPES = DATA.duplicates || [];
+document.getElementById("dupBadge").textContent = DUPES.length ? `${DUPES.length} flagged` : "none";
+if (DUPES.length === 0) {
+  document.getElementById("dupList").innerHTML = `<div class="note" style="margin-top:0">No duplicate rows detected as of last update.</div>`;
+} else {
+  document.getElementById("dupList").innerHTML = DUPES.map(d => {
+    const url = SOURCE_SHEET_URLS[d.workbook] || Object.values(SOURCE_SHEET_URLS)[0];
+    return `<div class="mini-lead"><span>${d.name} <span style="color:var(--text-muted)">· ${d.sheet} · ${d.flag}</span></span><span><a href="${url}" target="_blank" rel="noopener">${d.phone}</a></span></div>`;
+  }).join("");
 }
 
 /* tooltip */
