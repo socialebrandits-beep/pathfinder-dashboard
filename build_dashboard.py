@@ -26,6 +26,12 @@ few rounds to nail down correctly):
     uniqueness marker that reads exactly "Unique" for every normal row. Any
     row where that cell is non-blank and NOT "Unique" is a flagged duplicate;
     we surface the name/phone/sheet and the flag text as-is.
+  - Recent-activity detail rows also carry: "method" (how the lead was
+    reached — "Phone call" if the contact column reads exactly "Yes",
+    "WhatsApp" if it reads exactly the WhatsApp-only string, else blank) and
+    "days_to_follow" (integer days between Date Called and Date Followed Up,
+    only set when BOTH dates are logged on that row — used to show how long
+    after first contact the follow-up happened).
 """
 import io
 import json
@@ -116,11 +122,35 @@ def analyze_sheet(xls, cfg):
     if cfg.get("track_dates"):
         rows = []
         for _, r in data.iterrows():
-            called = fmt_date(r[cfg["date_called_col"]])
-            followed_d = fmt_date(r[cfg["date_followed_col"]])
+            called_raw = r[cfg["date_called_col"]]
+            followed_raw = r[cfg["date_followed_col"]]
+            called = fmt_date(called_raw)
+            followed_d = fmt_date(followed_raw)
             if called or followed_d:
                 name_val = r[cfg["name_col"]]
                 phone_val = r[cfg["phone_col"]]
+
+                # How this lead was reached, for the "contacted" list — reuses the same
+                # exact-match contact-status column as the headline methodology above.
+                contact_val = r[cfg["contacted_col"]]
+                if contact_val == YES:
+                    method = "Phone call"
+                elif contact_val == WHATSAPP:
+                    method = "WhatsApp"
+                else:
+                    method = ""
+
+                # Days between first contact and follow-up, for the "followed up" list —
+                # only computable when both dates are actually logged on this row.
+                days_to_follow = None
+                if called and followed_d:
+                    try:
+                        d1 = pd.to_datetime(called_raw).normalize()
+                        d2 = pd.to_datetime(followed_raw).normalize()
+                        days_to_follow = int((d2 - d1).days)
+                    except Exception:
+                        days_to_follow = None
+
                 rows.append(dict(
                     name=str(name_val).strip() if pd.notna(name_val) else "",
                     phone=str(phone_val).strip() if pd.notna(phone_val) else "",
@@ -128,6 +158,8 @@ def analyze_sheet(xls, cfg):
                     followed=followed_d or "—",
                     sheet=cfg["display"],
                     workbook=cfg["workbook"],
+                    method=method,
+                    days_to_follow=days_to_follow,
                 ))
         detail = rows
 

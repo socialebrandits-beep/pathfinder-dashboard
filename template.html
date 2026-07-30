@@ -291,12 +291,32 @@ const RA = DATA.recent_activity;
 
 if (RA) {
   const maxN = Math.max(...RA.called_by_date.map(d => d.n), ...RA.followed_by_date.map(d => d.n));
-  function miniBarRow(d, colorVar, keyPrefix, leads) {
+
+  /* Extra context shown per lead, alongside the sheet name — differs by which list
+     this is: the "contacted" list shows how the lead was reached (phone vs WhatsApp);
+     the "followed up" list shows how long after first contact the follow-up happened. */
+  function leadExtra(l, kind) {
+    if (kind === "called") {
+      return l.method ? ` · ${l.method}` : "";
+    }
+    if (typeof l.days_to_follow === "number") {
+      const n = l.days_to_follow;
+      if (n === 0) return ` · followed up same day as first contact`;
+      if (n > 0) return ` · followed up ${n} day${n === 1 ? "" : "s"} after first contact`;
+      return ` · logged ${Math.abs(n)} day${Math.abs(n) === 1 ? "" : "s"} before first contact (check dates)`;
+    }
+    if (l.called && l.called !== "—") {
+      return ` · first contacted ${l.called}`;
+    }
+    return "";
+  }
+
+  function miniBarRow(d, colorVar, keyPrefix, leads, kind) {
     const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
     const w = (d.n / maxN * 100).toFixed(1);
     const leadRows = leads.map(l => {
       const url = SOURCE_SHEET_URLS[l.workbook] || Object.values(SOURCE_SHEET_URLS)[0];
-      return `<div class="mini-lead"><span>${l.name} <span style="color:var(--text-muted)">· ${l.sheet}</span></span><span><a href="${url}" target="_blank" rel="noopener">${l.phone}</a></span></div>`;
+      return `<div class="mini-lead"><span>${l.name} <span style="color:var(--text-muted)">· ${l.sheet}${leadExtra(l, kind)}</span></span><span><a href="${url}" target="_blank" rel="noopener">${l.phone}</a></span></div>`;
     }).join("");
     return `<div class="bar-mini-wrap">
       <div class="bar-mini-row expandable" data-target="${key}">
@@ -308,8 +328,8 @@ if (RA) {
       <div class="bar-mini-detail" id="${key}">${leadRows}</div>
     </div>`;
   }
-  const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook }));
-  const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook }));
+  const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, method: r.method }));
+  const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, called: r.called, days_to_follow: r.days_to_follow }));
 
   document.getElementById("dateBadge").textContent = `${RA.sheets.length} of ${RA.total_sheets} sheets · partial`;
   document.getElementById("dateCap").textContent =
@@ -317,9 +337,9 @@ if (RA) {
 
   document.getElementById("dateBars").innerHTML =
     `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.contacted_total)} contacted (on tracked sheets) have a logged date</span></div>` +
-    RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d))).join("") +
+    RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d), "called")).join("") +
     `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.followed_total)} followed up (on tracked sheets) have a logged date</span></div>` +
-    RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d))).join("");
+    RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d), "followed")).join("");
 
   document.querySelectorAll(".bar-mini-row.expandable").forEach(row => {
     row.addEventListener("click", () => {
