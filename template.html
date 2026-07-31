@@ -234,11 +234,17 @@ combined.follow_success_rate_of_attempts = combined.follow_attempted ? combined.
 document.getElementById("stamp").textContent = "Last updated " + DATA.updated;
 document.getElementById("heroTotal").textContent = fmt(combined.total);
 
-/* KPI row — contact-method headline metrics (the follow-up breakdown gets its own
-   stat row inside the "Follow-up progress" card below, since it's a separate axis) */
+/* KPI row — headline metrics for BOTH axes at a glance: contact-method (independent
+   of follow-up) and follow-up outcome (independent of contact-method). The Follow-up
+   progress card below repeats the follow-up numbers alongside the per-sheet breakdown,
+   but they're surfaced here too so the top-level summary doesn't require scrolling. */
 const kpis = [
   { v: combined.contacted, l: "Contacted", dot: "--series-1", sub: pct(combined.contacted, combined.total) + "%" },
-  { v: combined.not_contacted_kpi, l: "Not contacted", dot: "--gray-mark", sub: pct(combined.not_contacted_kpi, combined.total) + "%" }
+  { v: combined.not_contacted_kpi, l: "Not contacted", dot: "--gray-mark", sub: pct(combined.not_contacted_kpi, combined.total) + "%" },
+  { v: combined.follow_attempted, l: "Follow-up attempted", dot: "--series-1", sub: pct(combined.follow_attempted, combined.total) + "%" },
+  { v: combined.follow_successful, l: "Successful follow-up", dot: "--good", sub: pct(combined.follow_successful, combined.total) + "%" },
+  { v: combined.follow_unsuccessful, l: "Unsuccessful attempt", dot: "--series-2", sub: pct(combined.follow_unsuccessful, combined.total) + "%" },
+  { v: combined.follow_not_attempted, l: "Not followed up", dot: "--gray-mark", sub: pct(combined.follow_not_attempted, combined.total) + "%" }
 ];
 document.getElementById("kpis").innerHTML = kpis.map(k =>
   `<div class="mini"><div class="v">${fmt(k.v)} <span style="font-size:12.5px;font-weight:500;color:var(--text-muted)">${k.sub}</span></div>
