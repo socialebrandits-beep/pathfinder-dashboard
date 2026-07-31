@@ -240,13 +240,28 @@ def analyze_sheet(xls, cfg):
     return result, detail, dup_rows
 
 
-def bucket_by_date(detail, field):
+def bucket_by_date(detail, field, with_method=False):
+    """Tally detail rows per date. When with_method=True (used for the "contacted, by
+    date" list), also split each day's count into phone-call vs. WhatsApp using the
+    same `method` field already computed per-row in analyze_sheet — so the dashboard
+    can show a phone/WhatsApp percentage split per day, not just a raw daily count.
+    `unknown` catches rows with a logged date but no exact-match method (e.g. contact
+    status wasn't exactly "Yes"/WhatsApp-string even though a call date exists), so
+    phone + whatsapp + unknown always reconciles back to the day's total `n`.
+    """
     counts = {}
+    method_counts = {}
     for r in detail:
         d = r[field]
         if d == "—":
             continue
         counts[d] = counts.get(d, 0) + 1
+        if with_method:
+            bucket = method_counts.setdefault(d, {"phone": 0, "whatsapp": 0})
+            if r.get("method") == "Phone call":
+                bucket["phone"] += 1
+            elif r.get("method") == "WhatsApp":
+                bucket["whatsapp"] += 1
 
     def sort_key(item):
         try:
@@ -254,7 +269,17 @@ def bucket_by_date(detail, field):
         except Exception:
             return datetime.max
 
-    return [dict(date=d, n=n) for d, n in sorted(counts.items(), key=sort_key)]
+    result = []
+    for d, n in counts.items():
+        entry = dict(date=d, n=n)
+        if with_method:
+            mc = method_counts.get(d, {"phone": 0, "whatsapp": 0})
+            entry["phone"] = mc["phone"]
+            entry["whatsapp"] = mc["whatsapp"]
+            entry["unknown"] = n - mc["phone"] - mc["whatsapp"]
+        result.append(entry)
+
+    return sorted(result, key=sort_key)
 
 
 def main():
@@ -284,7 +309,7 @@ def main():
             total_sheets=len(SHEET_CONFIGS),
             contacted_total=tracked_contacted,
             followed_total=tracked_followed,
-            called_by_date=bucket_by_date(all_detail, "called"),
+            called_by_date=bucket_by_date(all_detail, "called", with_method=True),
             followed_by_date=bucket_by_date(all_detail, "followed"),
             detail=all_detail,
         )
