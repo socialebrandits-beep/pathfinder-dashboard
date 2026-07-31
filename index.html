@@ -212,10 +212,10 @@ const DATA = {
     {
       "name": "Analytics",
       "total": 425,
-      "conv": 203,
+      "conv": 204,
       "whatsapp": 200,
-      "not_contacted": 22,
-      "contacted": 403,
+      "not_contacted": 21,
+      "contacted": 404,
       "followed": 38,
       "follow_attempted": 69,
       "follow_successful": 38,
@@ -303,36 +303,57 @@ const DATA = {
       "Free AI Workshop for Schools/Institutes"
     ],
     "total_sheets": 5,
-    "contacted_total": 456,
+    "contacted_total": 457,
     "followed_total": 53,
     "called_by_date": [
       {
         "date": "22 Jul",
-        "n": 1
+        "n": 1,
+        "phone": 1,
+        "whatsapp": 0,
+        "unknown": 0
       },
       {
         "date": "23 Jul",
-        "n": 6
+        "n": 6,
+        "phone": 5,
+        "whatsapp": 1,
+        "unknown": 0
       },
       {
         "date": "24 Jul",
-        "n": 4
+        "n": 4,
+        "phone": 1,
+        "whatsapp": 3,
+        "unknown": 0
       },
       {
         "date": "27 Jul",
-        "n": 21
+        "n": 21,
+        "phone": 15,
+        "whatsapp": 6,
+        "unknown": 0
       },
       {
         "date": "28 Jul",
-        "n": 17
+        "n": 17,
+        "phone": 10,
+        "whatsapp": 7,
+        "unknown": 0
       },
       {
         "date": "30 Jul",
-        "n": 13
+        "n": 13,
+        "phone": 9,
+        "whatsapp": 4,
+        "unknown": 0
       },
       {
         "date": "31 Jul",
-        "n": 9
+        "n": 10,
+        "phone": 10,
+        "whatsapp": 0,
+        "unknown": 0
       }
     ],
     "followed_by_date": [
@@ -1022,6 +1043,17 @@ const DATA = {
         "follow_status": ""
       },
       {
+        "name": "R  Sudharshani Somanathan",
+        "phone": "+94719814081",
+        "called": "31 Jul",
+        "followed": "—",
+        "sheet": "Analytics",
+        "workbook": 1,
+        "method": "Phone call",
+        "days_to_follow": null,
+        "follow_status": ""
+      },
+      {
         "name": "Rukshani Refai",
         "phone": "+94722991717",
         "called": "28 Jul",
@@ -1297,6 +1329,39 @@ if (RA) {
       <div class="bar-mini-detail" id="${key}">${leadRows}</div>
     </div>`;
   }
+
+  /* Same bar-length-vs-day-volume convention as miniBarRow (the overall bar width still
+     scales with maxN so days remain comparable), but the filled portion is split into a
+     phone-call segment and a WhatsApp segment so each day also shows the % mix of how
+     leads were reached. Any leftover (a logged call date but no exact-match method) shows
+     as a small neutral sliver so the segments always reconcile to the day's full count. */
+  function splitBarRow(d, keyPrefix, leads, kind) {
+    const key = keyPrefix + "-" + d.date.replace(/\s+/g, "");
+    const w = (d.n / maxN * 100).toFixed(1);
+    const known = d.phone + d.whatsapp;
+    const phonePct = d.n ? (d.phone / d.n * 100) : 0;
+    const whatsappPct = d.n ? (d.whatsapp / d.n * 100) : 0;
+    const unknownPct = d.n ? (d.unknown / d.n * 100) : 0;
+    const segs = [
+      { pct: phonePct, css: "--series-1", label: "Phone conversation", v: d.phone },
+      { pct: whatsappPct, css: "--series-2", label: "WhatsApp", v: d.whatsapp },
+      { pct: unknownPct, css: "--gray-mark", label: "Unlogged method", v: d.unknown }
+    ].map(seg => seg.v ? `<div class="seg" style="width:${seg.pct}%;background:var(${seg.css})"
+        data-t1="${seg.label}" data-t2="${fmt(seg.v)} of ${fmt(d.n)} on ${d.date} (${Math.round(seg.pct)}%)"></div>` : "").join("");
+    const leadRows = leads.map(l => {
+      const url = SOURCE_SHEET_URLS[l.workbook] || Object.values(SOURCE_SHEET_URLS)[0];
+      return `<div class="mini-lead"><span>${l.name} <span style="color:var(--text-muted)">· ${l.sheet}${leadExtra(l, kind)}</span></span><span><a href="${url}" target="_blank" rel="noopener">${l.phone}</a></span></div>`;
+    }).join("");
+    return `<div class="bar-mini-wrap">
+      <div class="bar-mini-row expandable" data-target="${key}">
+        <div class="chev">›</div>
+        <div class="dlabel">${d.date}</div>
+        <div class="track"><div class="fill" style="width:${w}%;display:flex;overflow:hidden">${segs}</div></div>
+        <div class="n">${d.n}</div>
+      </div>
+      <div class="bar-mini-detail" id="${key}">${leadRows}</div>
+    </div>`;
+  }
   const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, method: r.method }));
   const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, called: r.called, days_to_follow: r.days_to_follow, follow_status: r.follow_status }));
 
@@ -1306,7 +1371,11 @@ if (RA) {
 
   document.getElementById("dateBars").innerHTML =
     `<div class="rl" style="margin-bottom:8px"><b>Number of Leads Contacted, By Date</b><span>${fmt(RA.called_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.contacted_total)} contacted (on tracked sheets) have a logged date</span></div>` +
-    RA.called_by_date.map(d => miniBarRow(d, "--series-1", "called", calledLeadsByDate(d), "called")).join("") +
+    `<div class="legend" style="margin:0 0 10px">
+       <div class="li"><span class="key-dot" style="background:var(--series-1)"></span>Phone conversation</div>
+       <div class="li"><span class="key-dot" style="background:var(--series-2)"></span>WhatsApp</div>
+     </div>` +
+    RA.called_by_date.map(d => splitBarRow(d, "called", calledLeadsByDate(d), "called")).join("") +
     `<div class="rl" style="margin:16px 0 8px"><b>Number of Follow Ups, By Date</b><span>${fmt(RA.followed_by_date.reduce((a,d)=>a+d.n,0))} of ${fmt(RA.followed_total)} followed up (on tracked sheets) have a logged date</span></div>` +
     RA.followed_by_date.map(d => miniBarRow(d, "--good", "followed", followedLeadsByDate(d), "followed")).join("");
 
