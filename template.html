@@ -329,16 +329,21 @@ if (RA) {
     if (kind === "called") {
       return l.method ? ` · ${l.method}` : "";
     }
+    // kind === "followed" — lead with whether the follow-up attempt was actually
+    // successful before the timing detail, since that's the more important fact.
+    const statusText = l.follow_status === "Successful" ? " · Successful"
+      : l.follow_status === "Unsuccessful" ? " · Unsuccessful attempt"
+      : "";
+    let timeText = "";
     if (typeof l.days_to_follow === "number") {
       const n = l.days_to_follow;
-      if (n === 0) return ` · followed up same day as first contact`;
-      if (n > 0) return ` · followed up ${n} day${n === 1 ? "" : "s"} after first contact`;
-      return ` · logged ${Math.abs(n)} day${Math.abs(n) === 1 ? "" : "s"} before first contact (check dates)`;
+      if (n === 0) timeText = ` · followed up same day as first contact`;
+      else if (n > 0) timeText = ` · followed up ${n} day${n === 1 ? "" : "s"} after first contact`;
+      else timeText = ` · logged ${Math.abs(n)} day${Math.abs(n) === 1 ? "" : "s"} before first contact (check dates)`;
+    } else if (l.called && l.called !== "—") {
+      timeText = ` · first contacted ${l.called}`;
     }
-    if (l.called && l.called !== "—") {
-      return ` · first contacted ${l.called}`;
-    }
-    return "";
+    return statusText + timeText;
   }
 
   function miniBarRow(d, colorVar, keyPrefix, leads, kind) {
@@ -359,7 +364,7 @@ if (RA) {
     </div>`;
   }
   const calledLeadsByDate = d => RA.detail.filter(r => r.called === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, method: r.method }));
-  const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, called: r.called, days_to_follow: r.days_to_follow }));
+  const followedLeadsByDate = d => RA.detail.filter(r => r.followed === d.date).map(r => ({ name: r.name, phone: r.phone, sheet: r.sheet, workbook: r.workbook, called: r.called, days_to_follow: r.days_to_follow, follow_status: r.follow_status }));
 
   document.getElementById("dateBadge").textContent = `${RA.sheets.length} of ${RA.total_sheets} sheets · partial`;
   document.getElementById("dateCap").textContent =

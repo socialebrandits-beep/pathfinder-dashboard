@@ -192,6 +192,18 @@ def analyze_sheet(xls, cfg):
                     except Exception:
                         days_to_follow = None
 
+                # Outcome of the follow-up attempt, for the "followed up" list — same
+                # three-way exact-match read as the sheet-level follow-up breakdown above.
+                # This is independent of whether a follow-up DATE was logged; a row can have
+                # a logged follow-up date and still have been unsuccessful ("No").
+                follow_status_val = r[cfg["followed_col"]]
+                if follow_status_val == YES:
+                    follow_status = "Successful"
+                elif follow_status_val == NO:
+                    follow_status = "Unsuccessful"
+                else:
+                    follow_status = ""
+
                 rows.append(dict(
                     name=str(name_val).strip() if pd.notna(name_val) else "",
                     phone=str(phone_val).strip() if pd.notna(phone_val) else "",
@@ -201,6 +213,7 @@ def analyze_sheet(xls, cfg):
                     workbook=cfg["workbook"],
                     method=method,
                     days_to_follow=days_to_follow,
+                    follow_status=follow_status,
                 ))
         detail = rows
 
