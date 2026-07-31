@@ -16,12 +16,31 @@ few rounds to nail down correctly):
     reply). No other value counts — not blanks, not "No", not near-miss text
     like "No Call, Sent Whatsapp". This is intentional exact-string matching,
     not fuzzy/contains matching.
-  - "Followed up" = the follow-up column reads EXACTLY "Yes".
-  - not_followed  = contacted - followed
   - not_contacted = total - contacted
   - "total" = number of rows with a non-empty Name cell (trailing template
     rows in the sheet have no name and are excluded).
   - This rule is applied uniformly across all 5 sheets.
+  - Follow-up is a THREE-way classification on the follow-up column (revised
+    2026 — this is intentionally NOT a simple Yes/No anymore):
+      * Cell reads EXACTLY "Yes"  -> follow-up attempted AND successful
+        (a follow-up call was made and a conversation took place).
+      * Cell reads EXACTLY "No"   -> follow-up attempted but NOT successful
+        (a follow-up attempt was made — e.g. a call — but no conversation
+        resulted; the salesperson may have then sent a WhatsApp message or
+        taken some other fallback action). This is NOT "no follow-up".
+      * Blank cell                -> no follow-up attempt was made at all.
+    follow_successful     = count of exactly "Yes"
+    follow_unsuccessful   = count of exactly "No"
+    follow_attempted      = follow_successful + follow_unsuccessful
+    follow_not_attempted  = total - follow_attempted
+    follow_attempt_rate            = follow_attempted / total
+    follow_success_rate            = follow_successful / total
+    follow_success_rate_of_attempts = follow_successful / follow_attempted
+    Every populated row falls into exactly one of {successful, unsuccessful,
+    not_attempted} by construction (not_attempted is the remainder), so these
+    three always reconcile back to "total" on every sheet and in aggregate.
+    "followed" is kept as a field name for backward compatibility elsewhere
+    in this pipeline and is now an alias for follow_successful.
   - "Duplicate rows" = each sheet's final column is a manually-maintained
     uniqueness marker that reads exactly "Unique" for every normal row. Any
     row where that cell is non-blank and NOT "Unique" is a flagged duplicate;
@@ -44,6 +63,7 @@ WORKBOOK_1_ID = "1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ"  # PATHFINDER INQ
 WORKBOOK_2_ID = "1ZSzNWIyoHA7UVRDA2cH9uVuhFa5uvhEmeBZifgokW74"  # Corporate/School AI Workshop Inquiries
 
 YES = "Yes"
+NO = "No"
 WHATSAPP = "Couldn't Connect, Sent Whatsapp"
 
 # Column positions verified directly against the live workbooks (0-indexed).
@@ -103,19 +123,40 @@ def analyze_sheet(xls, cfg):
     total = int(len(data))
     not_contacted = total - contacted
 
-    followed = int((data[cfg["followed_col"]] == YES).sum())
+    # Follow-up is a three-way classification (see module docstring): exactly "Yes" =
+    # successful, exactly "No" = attempted-but-unsuccessful, blank = not attempted at all.
+    # not_attempted is computed as a remainder so the three always reconcile to `total`.
+    followed_vals = data[cfg["followed_col"]]
+    follow_successful = int((followed_vals == YES).sum())
+    follow_unsuccessful = int((followed_vals == NO).sum())
+    follow_attempted = follow_successful + follow_unsuccessful
+    follow_not_attempted = total - follow_attempted
+
+    def _rate(n, d):
+        return round(n / d, 4) if d else 0.0
 
     result = dict(
         name=cfg["display"], total=total, conv=conv, whatsapp=whatsapp,
-        not_contacted=not_contacted, contacted=contacted, followed=followed,
+        not_contacted=not_contacted, contacted=contacted,
+        followed=follow_successful,  # backward-compat alias = follow_successful
+        follow_attempted=follow_attempted,
+        follow_successful=follow_successful,
+        follow_unsuccessful=follow_unsuccessful,
+        follow_not_attempted=follow_not_attempted,
+        follow_attempt_rate=_rate(follow_attempted, total),
+        follow_success_rate=_rate(follow_successful, total),
+        follow_success_rate_of_attempts=_rate(follow_successful, follow_attempted),
         note=None,
     )
-    if total and not contacted:
-        result["note"] = None
-    if total and contacted and not followed:
+    if total and not follow_attempted:
         result["note"] = (
-            "No leads on this sheet have been followed up yet — check whether these are "
+            "No follow-up attempts have been logged on this sheet yet — check whether these are "
             "recent leads or if follow-ups are overdue."
+        )
+    elif total and follow_attempted and not follow_successful:
+        result["note"] = (
+            "Follow-up attempts have been made on this sheet, but none have resulted in a "
+            "successful conversation yet."
         )
 
     detail = None

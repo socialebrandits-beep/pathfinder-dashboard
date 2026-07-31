@@ -155,7 +155,8 @@
   <!-- FOLLOW UP -->
   <div class="card">
     <h2>Follow-up progress</h2>
-    <div class="cap">Of the leads contacted on each sheet, how many have since been followed up</div>
+    <div class="cap">Every inquiry, by follow-up outcome — successful, attempted but unsuccessful, or never attempted. Independent of whether the lead was contacted.</div>
+    <div class="hero-side" id="fuStats" style="margin-bottom:16px"></div>
     <div id="fuStacks"></div>
     <div class="legend" id="fuLegend"></div>
   </div>
@@ -187,10 +188,16 @@
      of contact (phone vs. WhatsApp) is shown as a separate segment in the chart below for
      visibility, but both roll into the single "contacted" figure everywhere else on this page.
      Only "No" or a blank cell counts as not contacted. This applies uniformly to all 5 sheets.
-   - Followed up = the follow-up column reads exactly "Yes".
-   - Columns used: Corporates - June 2026 (F contacted / H followed up), Corporate/Schools - March
-     2026 (I / K), Analytics (I / K), Free AI Workshop (G / I), AI Program Inquiries Apr 2026 (I / K).
-   - "Not followed up" = contacted − followed up.
+   - Follow-up (revised 2026) is a THREE-way read of the follow-up column, independent of the
+     contact column above — every inquiry gets classified, not just contacted ones:
+       "Yes"  -> follow-up attempted AND successful (a call was made, a conversation happened).
+       "No"   -> follow-up attempted but NOT successful (e.g. no answer; the salesperson may have
+                 fallen back to WhatsApp or another channel). This is NOT "no follow-up".
+       blank  -> no follow-up attempt was made at all.
+     Successful + Unsuccessful = Attempts made. Attempts made + No attempt = Total inquiries.
+   - Columns used (0-indexed / spreadsheet letter): Corporates - June 2026 (F contacted / H
+     follow-up), Corporate/Schools - March 2026 (I / K), Analytics / Pathfinding Inquiries (I / K),
+     Free AI Workshop (G / I), AI Program Inquiries Apr 2026 (I / K).
    Source: fresh .xlsx export of both live sheets, analyzed with exact-string matching (pandas),
    not UI filtering or reading comments/notes columns.
 ================================================================================= */
@@ -203,7 +210,6 @@ const DATA = /*__DATA_JSON__*/;
 /* ============================================================================ */
 
 DATA.sheets.forEach(s => {
-  s.not_followed = s.contacted - s.followed;
   /* not contacted, for KPI/classification purposes = total - contacted (contacted already
      includes both phone conversation and WhatsApp-only, per the methodology note above) */
   s.not_contacted_kpi = s.total - s.contacted;
@@ -212,21 +218,26 @@ DATA.sheets.forEach(s => {
 const fmt = n => n.toLocaleString("en-US");
 const pct = (n, d) => d ? Math.round(n / d * 100) : 0;
 
-const combined = { name: "All sheets", total: 0, conv: 0, whatsapp: 0, not_contacted: 0, contacted: 0, followed: 0 };
+const combined = {
+  name: "All sheets", total: 0, conv: 0, whatsapp: 0, not_contacted: 0, contacted: 0,
+  follow_attempted: 0, follow_successful: 0, follow_unsuccessful: 0, follow_not_attempted: 0
+};
 DATA.sheets.forEach(s => {
-  ["total","conv","whatsapp","not_contacted","contacted","followed"].forEach(k => combined[k] += s[k]);
+  ["total","conv","whatsapp","not_contacted","contacted",
+   "follow_attempted","follow_successful","follow_unsuccessful","follow_not_attempted"].forEach(k => combined[k] += s[k]);
 });
-combined.not_followed = combined.contacted - combined.followed;
 combined.not_contacted_kpi = combined.total - combined.contacted;
+combined.follow_attempt_rate = combined.total ? combined.follow_attempted / combined.total : 0;
+combined.follow_success_rate = combined.total ? combined.follow_successful / combined.total : 0;
+combined.follow_success_rate_of_attempts = combined.follow_attempted ? combined.follow_successful / combined.follow_attempted : 0;
 
 document.getElementById("stamp").textContent = "Last updated " + DATA.updated;
 document.getElementById("heroTotal").textContent = fmt(combined.total);
 
-/* KPI row — 5 headline metrics */
+/* KPI row — contact-method headline metrics (the follow-up breakdown gets its own
+   stat row inside the "Follow-up progress" card below, since it's a separate axis) */
 const kpis = [
   { v: combined.contacted, l: "Contacted", dot: "--series-1", sub: pct(combined.contacted, combined.total) + "%" },
-  { v: combined.followed, l: "Followed up", dot: "--good", sub: pct(combined.followed, combined.contacted) + "% of contacted" },
-  { v: combined.not_followed, l: "Not followed up", dot: "--series-2", sub: pct(combined.not_followed, combined.contacted) + "% of contacted" },
   { v: combined.not_contacted_kpi, l: "Not contacted", dot: "--gray-mark", sub: pct(combined.not_contacted_kpi, combined.total) + "%" }
 ];
 document.getElementById("kpis").innerHTML = kpis.map(k =>
@@ -262,27 +273,46 @@ document.getElementById("legend").innerHTML =
 document.getElementById("contactNote").innerHTML =
   `"Contacted" (used in the KPI row and the follow-up card below) = phone conversation OR WhatsApp-only reply, on every sheet. The chart above splits them into separate segments for visibility, but both count as contacted everywhere else on this page.`;
 
-/* follow-up bars — followed up vs not followed up, out of contacted */
+/* follow-up stat row — the five headline numbers, computed from `combined` (the
+   aggregate across all sheets) so the breakdown is visible at the overall-dashboard
+   level, not just per sheet. */
+const fuStats = [
+  { v: combined.total, l: "Total inquiries", sub: "" },
+  { v: combined.follow_attempted, l: "Follow-up attempted", dot: "--series-1", sub: pct(combined.follow_attempted, combined.total) + "% of total" },
+  { v: combined.follow_successful, l: "Successful follow-up", dot: "--good", sub: pct(combined.follow_successful, combined.total) + "% of total · " + pct(combined.follow_successful, combined.follow_attempted) + "% of attempts" },
+  { v: combined.follow_unsuccessful, l: "Unsuccessful attempt", dot: "--series-2", sub: pct(combined.follow_unsuccessful, combined.total) + "% of total · " + pct(combined.follow_unsuccessful, combined.follow_attempted) + "% of attempts" },
+  { v: combined.follow_not_attempted, l: "No follow-up attempted", dot: "--gray-mark", sub: pct(combined.follow_not_attempted, combined.total) + "% of total" }
+];
+document.getElementById("fuStats").innerHTML = fuStats.map(k =>
+  `<div class="mini"><div class="v">${fmt(k.v)} ${k.sub ? `<span style="font-size:12.5px;font-weight:500;color:var(--text-muted)">${k.sub}</span>` : ""}</div>
+   <div class="l">${k.dot ? `<span class="key-dot" style="background:var(${k.dot})"></span>` : ""}${k.l}</div></div>`).join("");
+
+/* follow-up bars — successful / unsuccessful / not attempted, out of TOTAL inquiries
+   (not just contacted — follow-up is now tracked independently of contact status).
+   Segments are ordered successful, unsuccessful, not-attempted so it's visually obvious
+   that successful+unsuccessful = attempts made, and attempts made + not-attempted = total. */
 document.getElementById("fuStacks").innerHTML = rows.map(s => {
   const segs = [
-    { v: s.followed, css: "--good", label: "Followed up" },
-    { v: s.not_followed, css: "--gray-mark", label: "Not followed up" }
+    { v: s.follow_successful, css: "--good", label: "Successful follow-up" },
+    { v: s.follow_unsuccessful, css: "--series-2", label: "Unsuccessful attempt" },
+    { v: s.follow_not_attempted, css: "--gray-mark", label: "No follow-up attempted" }
   ].map(seg => {
     if (!seg.v) return "";
-    const w = (seg.v / s.contacted * 100).toFixed(2);
-    const show = s.contacted && seg.v / s.contacted > 0.1;
+    const w = (seg.v / s.total * 100).toFixed(2);
+    const show = seg.v / s.total > 0.1;
     return `<div class="seg" style="width:${w}%;background:var(${seg.css})"
-      data-t1="${seg.label}" data-t2="${fmt(seg.v)} leads · ${pct(seg.v, s.contacted)}% of ${s.name}'s contacted leads">
-      ${show ? `<div class="seg-label">${pct(seg.v, s.contacted)}%</div>` : ""}</div>`;
+      data-t1="${seg.label}" data-t2="${fmt(seg.v)} leads · ${pct(seg.v, s.total)}% of ${s.name}'s total inquiries">
+      ${show ? `<div class="seg-label">${pct(seg.v, s.total)}%</div>` : ""}</div>`;
   }).join("");
   return `<div class="stackrow">
-    <div class="rl"><b>${s.name}</b><span>${fmt(s.contacted)} contacted</span></div>
-    <div class="stack">${s.contacted ? segs : ""}</div></div>`;
+    <div class="rl"><b>${s.name}</b><span>${fmt(s.total)} total · ${fmt(s.follow_attempted)} attempted</span></div>
+    <div class="stack">${s.total ? segs : ""}</div></div>`;
 }).join("");
 
 document.getElementById("fuLegend").innerHTML =
-  `<div class="li"><span class="key-dot" style="background:var(--good)"></span>Followed up</div>` +
-  `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>Not followed up</div>`;
+  `<div class="li"><span class="key-dot" style="background:var(--good)"></span>Successful follow-up</div>` +
+  `<div class="li"><span class="key-dot" style="background:var(--series-2)"></span>Unsuccessful attempt</div>` +
+  `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>No follow-up attempted</div>`;
 
 /* recent dated activity — combined across every sheet that has "Date Called" /
    "Date Followed Up" columns wired up. Sheets without those columns yet are
