@@ -90,6 +90,10 @@ SHEET_CONFIGS = [
          name_col=2, phone_col=3, contacted_col=6, followed_col=8,
          date_called_col=11, date_followed_col=12, track_dates=True,
          unique_col=16),
+    dict(workbook=1, sheet="Free AI Workshop For Jaffna Educators", display="Free AI Workshop For Jaffna Educators",
+         name_col=1, phone_col=2, contacted_col=4, followed_col=6),
+    dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
+         name_col=3, phone_col=4, contacted_col=7, followed_col=9),
 ]
 
 
