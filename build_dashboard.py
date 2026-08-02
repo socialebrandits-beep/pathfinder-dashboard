@@ -90,7 +90,11 @@ SHEET_CONFIGS = [
          name_col=2, phone_col=3, contacted_col=6, followed_col=8,
          date_called_col=11, date_followed_col=12, track_dates=True,
          unique_col=16),
-    dict(workbook=1, sheet="Free AI Workshop For Jaffna Educators", display="Free AI Workshop For Jaffna Educators",
+    # NOTE: the live tab name "Free AI Workshop For Jaffna Educators" is 37 characters,
+    # over Excel's 31-character worksheet-name limit — Google Sheets silently truncates
+    # it to 31 chars on .xlsx export (same reason "Free AI Workshop for SchoolsIns" above
+    # is a truncated name, not the full tab name), so we must match on the truncated form.
+    dict(workbook=1, sheet="Free AI Workshop For Jaffna Edu", display="Free AI Workshop For Jaffna Educators",
          name_col=1, phone_col=2, contacted_col=4, followed_col=6),
     dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
          name_col=3, phone_col=4, contacted_col=7, followed_col=9),
