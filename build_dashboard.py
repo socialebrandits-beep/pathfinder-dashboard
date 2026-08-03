@@ -32,13 +32,18 @@ few rounds to nail down correctly):
     follow_successful     = count of exactly "Yes"
     follow_unsuccessful   = count of exactly "No"
     follow_attempted      = follow_successful + follow_unsuccessful
-    follow_not_attempted  = total - follow_attempted
+    follow_not_attempted  = max(0, contacted - follow_attempted)   -- see note below
     follow_attempt_rate            = follow_attempted / total
     follow_success_rate            = follow_successful / total
     follow_success_rate_of_attempts = follow_successful / follow_attempted
-    Every populated row falls into exactly one of {successful, unsuccessful,
-    not_attempted} by construction (not_attempted is the remainder), so these
-    three always reconcile back to "total" on every sheet and in aggregate.
+    IMPORTANT: follow_not_attempted is scoped to CONTACTED leads only (revised
+    2026-08) — you can't follow up on someone who was never reached, so leads
+    that were never contacted are excluded entirely rather than being counted
+    as "not followed up". This means successful + unsuccessful + not_attempted
+    reconciles back to "contacted", NOT "total" — the gap between "contacted"
+    and "total" (i.e. never-contacted leads) sits outside this classification
+    altogether. Clamped at 0 as a safety net since "contacted" and "followed
+    up" come from two independently-maintained columns.
     "followed" is kept as a field name for backward compatibility elsewhere
     in this pipeline and is now an alias for follow_successful.
   - "Duplicate rows" = each sheet's final column is a manually-maintained
@@ -54,13 +59,18 @@ few rounds to nail down correctly):
 """
 import io
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 import requests
 
 WORKBOOK_1_ID = "1EqHza6vadQoyrvNUnmK30s7u6LvcEI54Sy2YkFV5xoQ"  # PATHFINDER INQUIRIES
 WORKBOOK_2_ID = "1ZSzNWIyoHA7UVRDA2cH9uVuhFa5uvhEmeBZifgokW74"  # Corporate/School AI Workshop Inquiries
+
+# Sri Lanka Standard Time (UTC+5:30, no DST) — the "Last updated" stamp is shown in this
+# timezone rather than UTC, since a UTC date can lag the team's actual local date by
+# several hours (e.g. still showing "yesterday" until 5:30am local time).
+LOCAL_TZ = timezone(timedelta(hours=5, minutes=30))
 
 YES = "Yes"
 NO = "No"
@@ -138,7 +148,13 @@ def analyze_sheet(xls, cfg):
     follow_successful = int((followed_vals == YES).sum())
     follow_unsuccessful = int((followed_vals == NO).sum())
     follow_attempted = follow_successful + follow_unsuccessful
-    follow_not_attempted = total - follow_attempted
+    # "Not followed up" is scoped to CONTACTED leads only — you can't follow up on someone
+    # who was never reached in the first place, so leads that were never contacted are not
+    # counted here at all (they simply aren't part of the follow-up conversation yet).
+    # Clamped at 0 as a safety net: "contacted" and "followed up" are read from two
+    # independently-maintained columns, so a data-entry inconsistency could in principle
+    # show a follow-up attempt logged against a row that isn't exact-match "contacted".
+    follow_not_attempted = max(0, contacted - follow_attempted)
 
     def _rate(n, d):
         return round(n / d, 4) if d else 0.0
@@ -323,7 +339,7 @@ def main():
         )
 
     data = dict(
-        updated=datetime.now(timezone.utc).strftime("%-d %b %Y"),
+        updated=datetime.now(LOCAL_TZ).strftime("%-d %b %Y"),
         sheets=sheets,
         recent_activity=recent_activity,
         duplicates=all_duplicates,

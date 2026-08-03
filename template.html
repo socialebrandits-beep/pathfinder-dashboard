@@ -155,7 +155,7 @@
   <!-- FOLLOW UP -->
   <div class="card">
     <h2>Follow-up progress</h2>
-    <div class="cap">Every inquiry, by follow-up outcome — successful, attempted but unsuccessful, or never attempted. Independent of whether the lead was contacted.</div>
+    <div class="cap">Every contacted lead, by follow-up outcome — successful, attempted but unsuccessful, or not yet followed up. Leads that haven't been contacted yet aren't included here, since there's nothing to follow up on until first contact happens.</div>
     <div class="hero-side" id="fuStats" style="margin-bottom:16px"></div>
     <div id="fuStacks"></div>
     <div class="legend" id="fuLegend"></div>
@@ -244,7 +244,7 @@ const kpis = [
   { v: combined.follow_attempted, l: "Follow-up attempted", dot: "--series-1", sub: pct(combined.follow_attempted, combined.total) + "%" },
   { v: combined.follow_successful, l: "Successful follow-up", dot: "--good", sub: pct(combined.follow_successful, combined.total) + "%" },
   { v: combined.follow_unsuccessful, l: "Unsuccessful attempt", dot: "--series-2", sub: pct(combined.follow_unsuccessful, combined.total) + "%" },
-  { v: combined.follow_not_attempted, l: "Not followed up", dot: "--gray-mark", sub: pct(combined.follow_not_attempted, combined.total) + "%" }
+  { v: combined.follow_not_attempted, l: "Not followed up", dot: "--gray-mark", sub: pct(combined.follow_not_attempted, combined.contacted) + "% of contacted" }
 ];
 document.getElementById("kpis").innerHTML = kpis.map(k =>
   `<div class="mini"><div class="v">${fmt(k.v)} <span style="font-size:12.5px;font-weight:500;color:var(--text-muted)">${k.sub}</span></div>
@@ -287,28 +287,33 @@ const fuStats = [
   { v: combined.follow_attempted, l: "Follow-up attempted", dot: "--series-1", sub: pct(combined.follow_attempted, combined.total) + "% of total" },
   { v: combined.follow_successful, l: "Successful follow-up", dot: "--good", sub: pct(combined.follow_successful, combined.total) + "% of total · " + pct(combined.follow_successful, combined.follow_attempted) + "% of attempts" },
   { v: combined.follow_unsuccessful, l: "Unsuccessful attempt", dot: "--series-2", sub: pct(combined.follow_unsuccessful, combined.total) + "% of total · " + pct(combined.follow_unsuccessful, combined.follow_attempted) + "% of attempts" },
-  { v: combined.follow_not_attempted, l: "No follow-up attempted", dot: "--gray-mark", sub: pct(combined.follow_not_attempted, combined.total) + "% of total" }
+  { v: combined.follow_not_attempted, l: "Not followed up yet", dot: "--gray-mark", sub: pct(combined.follow_not_attempted, combined.contacted) + "% of contacted" }
 ];
 document.getElementById("fuStats").innerHTML = fuStats.map(k =>
   `<div class="mini"><div class="v">${fmt(k.v)} ${k.sub ? `<span style="font-size:12.5px;font-weight:500;color:var(--text-muted)">${k.sub}</span>` : ""}</div>
    <div class="l">${k.dot ? `<span class="key-dot" style="background:var(${k.dot})"></span>` : ""}${k.l}</div></div>`).join("");
 
-/* follow-up bars — successful / unsuccessful / not attempted, out of TOTAL inquiries
-   (not just contacted — follow-up is now tracked independently of contact status).
-   Segments are ordered successful, unsuccessful, not-attempted so it's visually obvious
-   that successful+unsuccessful = attempts made, and attempts made + not-attempted = total. */
+/* follow-up bars — successful / unsuccessful / not-yet-followed-up. Bar WIDTH stays
+   relative to the sheet's TOTAL inquiries (so bar-to-bar comparison across sheets is
+   still meaningful), but each segment's displayed PERCENTAGE uses the denominator that
+   actually matches its meaning: successful/unsuccessful are % of total inquiries, while
+   "not followed up yet" is % of CONTACTED leads (you can't follow up on someone never
+   reached, so never-contacted leads are excluded from that figure — see fix 2026-08).
+   This means the three segments no longer necessarily fill the whole bar: any gap at
+   the end represents leads that haven't been contacted at all yet. */
 document.getElementById("fuStacks").innerHTML = rows.map(s => {
   const segs = [
-    { v: s.follow_successful, css: "--good", label: "Successful follow-up" },
-    { v: s.follow_unsuccessful, css: "--series-2", label: "Unsuccessful attempt" },
-    { v: s.follow_not_attempted, css: "--gray-mark", label: "No follow-up attempted" }
+    { v: s.follow_successful, css: "--good", label: "Successful follow-up", base: s.total, baseLabel: "total inquiries" },
+    { v: s.follow_unsuccessful, css: "--series-2", label: "Unsuccessful attempt", base: s.total, baseLabel: "total inquiries" },
+    { v: s.follow_not_attempted, css: "--gray-mark", label: "Not followed up yet", base: s.contacted, baseLabel: "contacted leads" }
   ].map(seg => {
     if (!seg.v) return "";
     const w = (seg.v / s.total * 100).toFixed(2);
+    const segPct = pct(seg.v, seg.base);
     const show = seg.v / s.total > 0.1;
     return `<div class="seg" style="width:${w}%;background:var(${seg.css})"
-      data-t1="${seg.label}" data-t2="${fmt(seg.v)} leads · ${pct(seg.v, s.total)}% of ${s.name}'s total inquiries">
-      ${show ? `<div class="seg-label">${pct(seg.v, s.total)}%</div>` : ""}</div>`;
+      data-t1="${seg.label}" data-t2="${fmt(seg.v)} leads · ${segPct}% of ${s.name}'s ${seg.baseLabel}">
+      ${show ? `<div class="seg-label">${segPct}%</div>` : ""}</div>`;
   }).join("");
   return `<div class="stackrow">
     <div class="rl"><b>${s.name}</b><span>${fmt(s.total)} total · ${fmt(s.follow_attempted)} attempted</span></div>
@@ -318,7 +323,7 @@ document.getElementById("fuStacks").innerHTML = rows.map(s => {
 document.getElementById("fuLegend").innerHTML =
   `<div class="li"><span class="key-dot" style="background:var(--good)"></span>Successful follow-up</div>` +
   `<div class="li"><span class="key-dot" style="background:var(--series-2)"></span>Unsuccessful attempt</div>` +
-  `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>No follow-up attempted</div>`;
+  `<div class="li"><span class="key-dot" style="background:var(--gray-mark)"></span>Not followed up yet (of contacted)</div>`;
 
 /* recent dated activity — combined across every sheet that has "Date Called" /
    "Date Followed Up" columns wired up. Sheets without those columns yet are
