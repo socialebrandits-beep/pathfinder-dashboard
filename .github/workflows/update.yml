@@ -1,8 +1,27 @@
 name: Update Pathfinder Dashboard
 
+# Runs automatically every 2 hours from 9am to 7pm Sri Lanka time (Asia/Colombo,
+# UTC+5:30) and rebuilds index.html from the live Google Sheets. Also runnable
+# manually anytime from the Actions tab (workflow_dispatch) if you want a fresh
+# pull right now instead of waiting for the schedule.
+#
+# Cron is always UTC, so the local 9am/11am/1pm/3pm/5pm/7pm slots below are
+# written as 3:30/5:30/7:30/9:30/11:30/13:30 UTC. Deliberately NOT on the
+# top-of-the-hour minute (:00) — GitHub's own docs note that round-number
+# minutes are the most likely to get delayed or dropped during high platform
+# load, since that's when everyone else's cron jobs fire too. Landing on :30
+# (a side effect of the +5:30 offset) avoids that congestion window.
+#
+# A separate Claude scheduled task provides an additional safety-net run at
+# 11:30pm on weekdays, independent of this schedule.
+#
+# Zero cost: this uses GitHub's free Actions minutes and the built-in
+# GITHUB_TOKEN (no secrets to set up). Nothing here talks to Claude.
+
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    # Every 2 hours, 9am-7pm Sri Lanka time (3:30/5:30/7:30/9:30/11:30/13:30 UTC).
+    - cron: '30 3,5,7,9,11,13 * * *'
   workflow_dispatch: {}
 
 permissions:
