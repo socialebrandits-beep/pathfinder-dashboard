@@ -288,8 +288,15 @@ def bucket_by_date(detail, field, with_method=False):
                 bucket["whatsapp"] += 1
 
     def sort_key(item):
+        # NOTE: `item` here is a dict ({"date": ..., "n": ...}), not a tuple — must
+        # index with item["date"], NOT item[0] (a previous version used item[0],
+        # which raised KeyError on every call since dicts don't support positional
+        # indexing; the exception was silently caught and fell back to datetime.max
+        # for every entry, which made sorted() a no-op that just preserved whatever
+        # order the raw sheet rows happened to be scanned in — not chronological
+        # order at all. Fixed 2026-08-06.)
         try:
-            return datetime.strptime(f"{item[0]} {datetime.now().year}", "%d %b %Y")
+            return datetime.strptime(f"{item['date']} {datetime.now().year}", "%d %b %Y")
         except Exception:
             return datetime.max
 
