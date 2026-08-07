@@ -106,8 +106,13 @@ SHEET_CONFIGS = [
     # is a truncated name, not the full tab name), so we must match on the truncated form.
     dict(workbook=1, sheet="Free AI Workshop For Jaffna Edu", display="Free AI Workshop For Jaffna Educators",
          name_col=1, phone_col=2, contacted_col=4, followed_col=6),
+    # "Date Called" (col L) and "Date Followed Up" (col M) were added to this sheet
+    # on 2026-08-07 specifically so this sheet could join the "Recent activity by
+    # date" section, same as the other tracked sheets — the sheet had no date
+    # columns at all before this.
     dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
-         name_col=3, phone_col=4, contacted_col=7, followed_col=9),
+         name_col=3, phone_col=4, contacted_col=7, followed_col=9,
+         date_called_col=11, date_followed_col=12, track_dates=True),
 ]
 
 
