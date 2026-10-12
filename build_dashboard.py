@@ -110,11 +110,16 @@ SHEET_CONFIGS = [
     # on 2026-08-07 specifically so this sheet could join the "Recent activity by
     # date" section, same as the other tracked sheets — the sheet had no date
     # columns at all before this.
-    dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
+      dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
          name_col=3, phone_col=4, contacted_col=7, followed_col=9,
          date_called_col=11, date_followed_col=12, track_dates=True),
+    dict(workbook=1, sheet="Analytics Program Inquiries - S", display="Analytics Program Inquiries - Sep 2026",
+         name_col=5, phone_col=6, contacted_col=7, followed_col=9,
+         date_called_col=11, date_followed_col=13, track_dates=True),
+    dict(workbook=1, sheet="AI Program Inquiries - Sep 2026", display="AI Program Inquiries - Sep 2026",
+         name_col=4, phone_col=6, contacted_col=7, followed_col=9,
+         date_called_col=11, date_followed_col=13, track_dates=True),
 ]
-
 
 def download_workbook(spreadsheet_id):
     url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=xlsx"
