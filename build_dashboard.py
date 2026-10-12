@@ -59,6 +59,7 @@ few rounds to nail down correctly):
 """
 import io
 import json
+import re
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -110,16 +111,72 @@ SHEET_CONFIGS = [
     # on 2026-08-07 specifically so this sheet could join the "Recent activity by
     # date" section, same as the other tracked sheets — the sheet had no date
     # columns at all before this.
-      dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
+    dict(workbook=2, sheet="Corporate - Aug 2026", display="Corporate - Aug 2026",
          name_col=3, phone_col=4, contacted_col=7, followed_col=9,
          date_called_col=11, date_followed_col=12, track_dates=True),
+    # Added 2026-10-12: the two Sep 2026 intake sheets. "Date Called"/"Date Followed
+    # Up" on both were manual-entry fields that were essentially never filled in until
+    # backfilled this date (dates were being written as prose inside the comments
+    # columns instead of the dedicated date columns) — now backfilled historically and
+    # kept current going forward by an onEdit Apps Script, so these two can carry
+    # track_dates=True like the other tracked sheets.
+    # NOTE: the live tab name "Analytics Program Inquiries - Sep 2026" is 39 characters,
+    # over Excel's 31-character limit, so Google Sheets truncates it to 31 chars on
+    # .xlsx export — same gotcha as the Jaffna Educators sheet above. Match on the
+    # truncated form. "AI Program Inquiries - Sep 2026" is exactly 31 chars, so it
+    # survives export untruncated.
+    # No unique_col on either: their final column ("Duplicate Phone?") is a fuzzy
+    # phone-digit cross-match list ("Matches row(s): 4, 5, 6...") rather than the
+    # manual "Unique"-marker convention the other sheets use, so it isn't a valid
+    # input for the duplicate-row scan here.
     dict(workbook=1, sheet="Analytics Program Inquiries - S", display="Analytics Program Inquiries - Sep 2026",
          name_col=5, phone_col=6, contacted_col=7, followed_col=9,
          date_called_col=11, date_followed_col=13, track_dates=True),
     dict(workbook=1, sheet="AI Program Inquiries - Sep 2026", display="AI Program Inquiries - Sep 2026",
          name_col=4, phone_col=6, contacted_col=7, followed_col=9,
          date_called_col=11, date_followed_col=13, track_dates=True),
+    # Added 2026-10-12: "Corporate - Sep 2026" in workbook 2 — same bug, same fix as the
+    # two Sep 2026 sheets above (dates were being written as prose in the Comments column
+    # instead of the dedicated Date Called/Date Followed Up columns). Backfilled 6 Date
+    # Called values historically (one lead, Zulfa Amjaad, marked Contacted=Yes but with no
+    # date anywhere in her comment to extract, was deliberately left blank rather than
+    # guessed — flag this to the team). No Date Followed Up backfill was needed: no row on
+    # this sheet has a "Followed Up & Spoke To Them" value logged yet. Column layout is
+    # identical to "Corporate - Aug 2026" immediately above, so track_dates=True and no
+    # unique_col (same "Duplicate Phone?" fuzzy-match caveat as the other Sep 2026 sheets
+    # — not the "Unique"-marker convention).
+    dict(workbook=2, sheet="Corporate - Sep 2026", display="Corporate - Sep 2026",
+         name_col=3, phone_col=4, contacted_col=7, followed_col=9,
+         date_called_col=11, date_followed_col=12, track_dates=True),
 ]
+
+
+def _sheet_month_key(cfg):
+    """Sort key so the dashboard always shows the most recent month first. Parses a
+    'Mon YYYY' / 'Month YYYY' pattern out of the sheet's display name (handles the mixed
+    abbreviation styles actually used: "Sep 2026", "Aug 2026", "June 2026", "Apr 2026",
+    "March 2026"). Sheets with no month in their name (ongoing trackers like "Analytics"
+    or "Free AI Workshop For Jaffna Educators") have no live-ordering meaning here, so
+    they sort after every dated sheet, in their original relative order (sort is stable).
+    """
+    months = {
+        "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,
+        "apr": 4, "april": 4, "may": 5, "jun": 6, "june": 6, "jul": 7, "july": 7,
+        "aug": 8, "august": 8, "sep": 9, "sept": 9, "september": 9, "oct": 10,
+        "october": 10, "nov": 11, "november": 11, "dec": 12, "december": 12,
+    }
+    m = re.search(r"([A-Za-z]+)\.?\s+(\d{4})", cfg["display"])
+    if not m:
+        return (1, 0, 0)
+    month_num = months.get(m.group(1).lower())
+    if not month_num:
+        return (1, 0, 0)
+    year = int(m.group(2))
+    return (0, -year, -month_num)
+
+
+SHEET_CONFIGS_BY_RECENCY = sorted(SHEET_CONFIGS, key=_sheet_month_key)
+
 
 def download_workbook(spreadsheet_id):
     url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=xlsx"
@@ -320,7 +377,9 @@ def bucket_by_date(detail, field, with_method=False):
             entry["unknown"] = n - mc["phone"] - mc["whatsapp"]
         result.append(entry)
 
-    return sorted(result, key=sort_key)
+    # Newest date first (reverse=True) — the dashboard always leads with the most
+    # recent activity, per the team's preference, rather than starting at the oldest.
+    return sorted(result, key=sort_key, reverse=True)
 
 
 def main():
@@ -329,10 +388,14 @@ def main():
     xls1 = pd.ExcelFile(wb1)
     xls2 = pd.ExcelFile(wb2)
 
+    # Iterate in recency order (latest month first) — per the team's preference, the
+    # dashboard always leads with the most recent sheet/month everywhere: the per-sheet
+    # cards below, and (via tracked_sheets) the "Date Called"/"Date Followed Up" wiring
+    # note. Sheets with no month in their name sort to the end (see _sheet_month_key).
     sheets = []
     all_detail = []
     all_duplicates = []
-    for cfg in SHEET_CONFIGS:
+    for cfg in SHEET_CONFIGS_BY_RECENCY:
         xls = xls1 if cfg["workbook"] == 1 else xls2
         result, detail, dup_rows = analyze_sheet(xls, cfg)
         sheets.append(result)
@@ -342,7 +405,7 @@ def main():
 
     recent_activity = None
     if all_detail:
-        tracked_sheets = [cfg["display"] for cfg in SHEET_CONFIGS if cfg.get("track_dates")]
+        tracked_sheets = [cfg["display"] for cfg in SHEET_CONFIGS_BY_RECENCY if cfg.get("track_dates")]
         tracked_contacted = sum(s["contacted"] for s in sheets if s["name"] in tracked_sheets)
         tracked_followed = sum(s["followed"] for s in sheets if s["name"] in tracked_sheets)
         recent_activity = dict(
