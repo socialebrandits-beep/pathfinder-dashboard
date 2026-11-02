@@ -207,7 +207,7 @@ const SOURCE_SHEET_URLS = {
 };
 
 const DATA = {
-  "updated": "1 Nov 2026",
+  "updated": "2 Nov 2026",
   "sheets": [
     {
       "name": "Analytics Program Inquiries - Sep 2026",
@@ -216,28 +216,28 @@ const DATA = {
       "whatsapp": 0,
       "not_contacted": 26,
       "contacted": 49,
-      "followed": 1,
-      "follow_attempted": 1,
-      "follow_successful": 1,
+      "followed": 0,
+      "follow_attempted": 0,
+      "follow_successful": 0,
       "follow_unsuccessful": 0,
-      "follow_not_attempted": 48,
-      "follow_attempt_rate": 0.0133,
-      "follow_success_rate": 0.0133,
-      "follow_success_rate_of_attempts": 1.0,
-      "note": null
+      "follow_not_attempted": 49,
+      "follow_attempt_rate": 0.0,
+      "follow_success_rate": 0.0,
+      "follow_success_rate_of_attempts": 0.0,
+      "note": "No follow-up attempts have been logged on this sheet yet — check whether these are recent leads or if follow-ups are overdue."
     },
     {
       "name": "AI Program Inquiries - Sep 2026",
       "total": 95,
-      "conv": 73,
+      "conv": 74,
       "whatsapp": 0,
-      "not_contacted": 22,
-      "contacted": 73,
+      "not_contacted": 21,
+      "contacted": 74,
       "followed": 1,
       "follow_attempted": 2,
       "follow_successful": 1,
       "follow_unsuccessful": 1,
-      "follow_not_attempted": 71,
+      "follow_not_attempted": 72,
       "follow_attempt_rate": 0.0211,
       "follow_success_rate": 0.0105,
       "follow_success_rate_of_attempts": 0.5,
@@ -245,35 +245,35 @@ const DATA = {
     },
     {
       "name": "Corporate - Sep 2026",
-      "total": 35,
+      "total": 36,
       "conv": 21,
       "whatsapp": 0,
-      "not_contacted": 14,
+      "not_contacted": 15,
       "contacted": 21,
       "followed": 3,
       "follow_attempted": 3,
       "follow_successful": 3,
       "follow_unsuccessful": 0,
       "follow_not_attempted": 18,
-      "follow_attempt_rate": 0.0857,
-      "follow_success_rate": 0.0857,
+      "follow_attempt_rate": 0.0833,
+      "follow_success_rate": 0.0833,
       "follow_success_rate_of_attempts": 1.0,
       "note": null
     },
     {
       "name": "Corporate - Aug 2026",
-      "total": 61,
+      "total": 62,
       "conv": 32,
       "whatsapp": 0,
-      "not_contacted": 29,
+      "not_contacted": 30,
       "contacted": 32,
       "followed": 2,
       "follow_attempted": 3,
       "follow_successful": 2,
       "follow_unsuccessful": 1,
       "follow_not_attempted": 29,
-      "follow_attempt_rate": 0.0492,
-      "follow_success_rate": 0.0328,
+      "follow_attempt_rate": 0.0484,
+      "follow_success_rate": 0.0323,
       "follow_success_rate_of_attempts": 0.6667,
       "note": null
     },
@@ -392,9 +392,16 @@ const DATA = {
       "Free AI Workshop for Schools/Institutes"
     ],
     "total_sheets": 10,
-    "contacted_total": 719,
-    "followed_total": 111,
+    "contacted_total": 720,
+    "followed_total": 110,
     "called_by_date": [
+      {
+        "date": "2 Nov",
+        "n": 3,
+        "phone": 2,
+        "whatsapp": 0,
+        "unknown": 1
+      },
       {
         "date": "1 Nov",
         "n": 8,
@@ -545,9 +552,9 @@ const DATA = {
       {
         "date": "30 Sep",
         "n": 8,
-        "phone": 8,
+        "phone": 7,
         "whatsapp": 0,
-        "unknown": 0
+        "unknown": 1
       },
       {
         "date": "29 Sep",
@@ -880,7 +887,7 @@ const DATA = {
         "workbook": 1,
         "method": "Phone call",
         "days_to_follow": 3,
-        "follow_status": "Successful"
+        "follow_status": ""
       },
       {
         "name": "Siraj",
@@ -1472,7 +1479,7 @@ const DATA = {
         "followed": "—",
         "sheet": "AI Program Inquiries - Sep 2026",
         "workbook": 1,
-        "method": "Phone call",
+        "method": "",
         "days_to_follow": null,
         "follow_status": "Unsuccessful"
       },
@@ -1546,6 +1553,17 @@ const DATA = {
         "name": "S.Sivaranjan",
         "phone": "narmatha1979@gmail.com",
         "called": "8 Oct",
+        "followed": "—",
+        "sheet": "AI Program Inquiries - Sep 2026",
+        "workbook": 1,
+        "method": "Phone call",
+        "days_to_follow": null,
+        "follow_status": ""
+      },
+      {
+        "name": "zameer hussain",
+        "phone": "h.zameer@yahoo.com",
+        "called": "2 Nov",
         "followed": "—",
         "sheet": "AI Program Inquiries - Sep 2026",
         "workbook": 1,
@@ -1708,6 +1726,17 @@ const DATA = {
         "follow_status": ""
       },
       {
+        "name": "Prashad Samantha",
+        "phone": "samanthab@abansfinance.lk",
+        "called": "2 Nov",
+        "followed": "—",
+        "sheet": "AI Program Inquiries - Sep 2026",
+        "workbook": 1,
+        "method": "Phone call",
+        "days_to_follow": null,
+        "follow_status": ""
+      },
+      {
         "name": "Zulfa Amjaad",
         "phone": "zulfa.amjad@gmail.com",
         "called": "—",
@@ -1781,6 +1810,17 @@ const DATA = {
         "sheet": "AI Program Inquiries - Sep 2026",
         "workbook": 1,
         "method": "Phone call",
+        "days_to_follow": null,
+        "follow_status": ""
+      },
+      {
+        "name": "Rukshila Perera",
+        "phone": "rukshilad@gmail.com",
+        "called": "2 Nov",
+        "followed": "—",
+        "sheet": "AI Program Inquiries - Sep 2026",
+        "workbook": 1,
+        "method": "",
         "days_to_follow": null,
         "follow_status": ""
       },
